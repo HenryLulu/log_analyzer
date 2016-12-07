@@ -33,7 +33,7 @@ def tail():
     run("tail -n 100 nohup.out")
 
 def clear():
-    run("")
+    run("cat /dev/null > nohup.out")
 
 def fetch(file):
     get('/data/proclog/log/pzs/back/'+file,'/Users/henry/bsfiles/access.log')

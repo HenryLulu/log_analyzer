@@ -6,7 +6,20 @@ import time
 import threading
 #test deployer
 mongo_addr = "mongodb://183.250.179.150:27017,117.145.178.217:27017,117.145.178.218:27017"
-server_ip = socket.gethostname()
+import socket
+import fcntl
+import struct
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_ip =  socket.inet_ntoa(fcntl.ioctl(
+        s.fileno(),
+        0x8915, # SIOCGIFADDR
+        struct.pack('256s', 'eth5'[:15])
+    )[20:24])
+except:
+    ips = os.popen("LANG=C ifconfig | grep \"inet addr\" | grep -v \"127.0.0.1\" | awk -F \":\" '{print $2}' | awk '{print $1}'").readlines()
+    if len(ips) > 0:
+        server_ip = ips[0]
 
 def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
