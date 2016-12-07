@@ -20,6 +20,9 @@ except:
     ips = os.popen("LANG=C ifconfig | grep \"inet addr\" | grep -v \"127.0.0.1\" | awk -F \":\" '{print $2}' | awk '{print $1}'").readlines()
     if len(ips) > 0:
         server_ip = ips[0]
+    else:
+        server_ip = "unknow"
+server_ip = server_ip.replace("\n","")
 
 def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10

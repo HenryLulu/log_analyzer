@@ -22,7 +22,13 @@ def upload():
     put('local_index.py', '~/local_index.py')
 
 def restart():
-    run("ps -ef|grep local_index.py|grep -v grep|awk '{print $2}'|xargs kill -9")
+    try:
+        run("ps -ef|grep local_index.py|grep -v grep|awk '{print $2}'|xargs kill -9")
+    finally:
+        with cd("/root/"):
+            run("nohup python -u local_index.py & sleep 1")
+
+def start():
     with cd("/root/"):
         run("nohup python -u local_index.py & sleep 1")
 
