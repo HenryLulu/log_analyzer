@@ -1,6 +1,5 @@
 from pymongo import *
 import re
-import socket
 import os
 import time
 import threading
@@ -142,6 +141,8 @@ def calculate(file):
             suc_n += 1
         flu_total += l[9]
 
+    rate_a = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
+
     try:
         client = MongoClient(mongo_addr)
         db = client.log_db
@@ -149,16 +150,22 @@ def calculate(file):
         user_table = db.user_table
 
         ins_user_res = user_table.insert_many(user_list.values())
+        req_n = len(log_list)+len(live_list)
+        start = file[7:21]
         log_info = {
             "s_ip":server_ip,
-            "start":file[7:21],
-            "req_n":len(log_list)+len(live_list),
+            "start":int(time.mktime((int(start[0:4]),int(start[5:6]),int(start[7:8]),int(start[9:10]),int(start[11:12]),int(start[13:14]),0,0,0))),
+            "req_n":req_n,
             "suc_n":suc_n,
+            "suc_r":round(float(suc_n*100)/req_n,2),
             "user_n":len(user_list),
             "jam_n":jam_n,
+            "jam_r":round(float(jam_n*100)/len(user_list),2),
             "flu":flu_total,
+            "band":round(float(flu_total)*8/300/1024,2),
             "users":ins_user_res.inserted_ids,
             "rate_n":rate_list,
+            "rate_a":rate_a,
             "channal_n":channel_list
         }
 
