@@ -1,4 +1,4 @@
-log_type = 2
+log_type = 1
 mongo_addr = "mongodb://183.250.179.150:27017,117.145.178.217:27017,117.145.178.218:27017"
 
 from pymongo import *
@@ -30,6 +30,7 @@ def ifjam(u):
 def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
     live_re = re.compile(r"^http://(\w+)\..+/live/(flv|ld/trans)/")
+    long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
     logs = open("/Users/henry/bsfiles/"+file,'r').readlines()
     log_list = []
     live_list = []
@@ -99,7 +100,7 @@ def calculate(file):
                 channel = live_re.match(x_group[8]).group(1)
                 rate = x_group[35].replace("\r\n","")
                 try:
-                    live_jam = int(x_group[9])>0
+                    live_jam = int(x_group[34])>0
                 except:
                     live_jam = False
                 r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
@@ -190,10 +191,16 @@ def calculate(file):
             channel_list[l[3]] = 1
 
         #rate_count
-        # if rate_list.has_key(l[4]):
-        #     rate_list[l[4]] += 1
-        # else:
-        #     rate_list[l[4]] = 1
+        lrm = long_rate_re.match(l[4])
+        if lrm:
+            i = 1
+            while i<5:
+                k = str((2500-int(lrm.group(i*2-1)))/500)
+                print k
+                if rate_list.has_key(k):
+                    rate_list[k] += int(lrm.group(i*2))
+                else:
+                    rate_list[k] = int(lrm.group(i*2))
 
         #success request count
         if l[2]:
@@ -283,7 +290,7 @@ def main():
 
 
 file="access_20161206094500.log"
-file="access_20161209110000.log"
+# file="access_20161209110000.log"
 calculate(file)
 
 #/Users/henry/bsfiles/
