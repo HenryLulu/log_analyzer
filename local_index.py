@@ -232,6 +232,20 @@ def calculate(file):
         }
 
         log_table.insert_one(log_info)
+
+        #save result locally
+        file = open("/data/log_summary","a")
+        try:
+            del log_info['users']
+            try:
+                del log_info['_id']
+            except:
+                pass
+        except:
+            pass
+        file.write(str(log_info)+'\n')
+        file.close()
+
         print "Info:Complete"
     except Exception,e:
         print Exception,":",e
