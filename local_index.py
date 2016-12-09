@@ -1,5 +1,6 @@
 log_type = 1
 mongo_addr = "mongodb://183.250.179.150:27017,117.145.178.217:27017,117.145.178.218:27017"
+log_dir = "/data/proclog/log/pzs/back"
 
 from pymongo import *
 import re
@@ -31,7 +32,7 @@ def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
     live_re = re.compile(r"^http://(\w+)\..+/live/(flv|ld/trans)/")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
-    logs = open("/Users/henry/bsfiles/"+file,'r').readlines()
+    logs = open(log_dir+"/"+file,'r').readlines()
     log_list = []
     live_list = []
 
@@ -265,7 +266,7 @@ def n_thread(file):
         print Exception,":",e
 
 def monitor():
-    dir = "/data/proclog/log/pzs/back"
+    dir = log_dir
     origin = set([_f[2] for _f in os.walk(dir)][0])
     while True:
         time.sleep(5)
