@@ -1,10 +1,11 @@
+log_type = 1
+mongo_addr = "mongodb://183.250.179.150:27017,117.145.178.217:27017,117.145.178.218:27017"
+
 from pymongo import *
 import re
 import os
 import time
 import threading
-#test deployer
-mongo_addr = "mongodb://183.250.179.150:27017,117.145.178.217:27017,117.145.178.218:27017"
 import socket
 import fcntl
 import struct
@@ -29,40 +30,80 @@ def ifjam(u):
 def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
     live_re = re.compile(r"^http://(\w+)\..+/live/(flv|ld/trans)/")
-    logs = open("/data/proclog/log/pzs/back/"+file,'r').readlines()
+    logs = open("/Users/henry/bsfiles/"+file,'r').readlines()
     log_list = []
     live_list = []
-    for l in logs:
-        try:
-            agent = l.split('"')[1].decode("utf-8",'ignore')
-        except:
-            continue
-        x_group = l.split(" ")
-        if len(x_group)<13:
-            continue
-        ip = x_group[1]
-        tim = int(x_group[0][0:10])
-        status = x_group[6]=="200" or x_group[6]=="206" or x_group[6]=="304"
-        flu = int(x_group[7])
 
-        req_ma = req_re.match(x_group[11])
-        if req_ma:
-            channel = req_ma.group(1)
-            rate = str(int(req_ma.group(2))%5)
-            seg = req_ma.group(3)==u"1"
-            segnum = int(req_ma.group(4))
-            r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
-            log_list.append(r)
-        elif live_re.match(x_group[11]):
-            channel = live_re.match(x_group[11]).group(1)
-            rate = x_group[3]
+    #format log lines(normal CDN)
+    if log_type==1:
+        for l in logs:
             try:
-                live_jam = int(x_group[2])>0
+                agent = l.split('"')[1].decode("utf-8",'ignore')
             except:
-                live_jam = False
-            r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
-            live_list.append(r)
+                continue
+            x_group = l.split(" ")
+            if len(x_group)<13:
+                continue
+            ip = x_group[1]
+            tim = int(x_group[0][0:10])
+            status = x_group[6]=="200" or x_group[6]=="206" or x_group[6]=="304"
+            flu = int(x_group[7])
 
+            req_ma = req_re.match(x_group[11])
+            if req_ma:
+                channel = req_ma.group(1)
+                rate = str(int(req_ma.group(2))%5)
+                seg = req_ma.group(3)==u"1"
+                segnum = int(req_ma.group(4))
+                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
+                log_list.append(r)
+            elif live_re.match(x_group[11]):
+                channel = live_re.match(x_group[11]).group(1)
+                rate = x_group[3]
+                try:
+                    live_jam = int(x_group[2])>0
+                except:
+                    live_jam = False
+                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
+                live_list.append(r)
+
+    #format log lines(Dilian CDN)
+    else:
+        for l in logs:
+            x_group = l.split("\t")
+            # try:
+            #     agent = l.split('"')[1].decode("utf-8",'ignore')
+            # except:
+            #     continue
+            # x_group = l.split(" ")
+            if len(x_group)<36:
+                continue
+            try:
+                agent = x_group[16].decode("utf-8",'ignore')
+            except:
+                continue
+            ip = x_group[0]
+            tim = int(x_group[1][0:10])
+            status = x_group[4]=="200" or x_group[4]=="206" or x_group[4]=="304"
+            flu = int(x_group[6])
+
+            req_ma = req_re.match(x_group[8])
+            if req_ma:
+                channel = req_ma.group(1)
+                rate = str(int(req_ma.group(2))%5)
+                seg = req_ma.group(3)==u"1"
+                segnum = int(req_ma.group(4))
+                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
+                log_list.append(r)
+            elif live_re.match(x_group[11]):
+                channel = live_re.match(x_group[8]).group(1)
+                rate = x_group[35].replace("\r\n","")
+                try:
+                    live_jam = int(x_group[9])>0
+                except:
+                    live_jam = False
+                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
+                live_list.append(r)
     user_list = {}
     channel_list = {}
     rate_list = {}
@@ -70,7 +111,9 @@ def calculate(file):
     jam_n = 0
     flu_total = 0
 
+    #seg logs
     for l in log_list:
+        #add users
         if user_list.has_key(l[0]):
             user_list[l[0]]["end"] = l[1]
             user_list[l[0]]["seg_e"] = l[6]
@@ -90,18 +133,27 @@ def calculate(file):
                 "agent":l[8]
             }
 
+        #channel count
         if channel_list.has_key(l[3]):
             channel_list[l[3]] += 1
         else:
             channel_list[l[3]] = 1
+
+        #time of 4 rates
+        seg_mode_time = 4 if l[5] else 10
         if rate_list.has_key(l[4]):
-            rate_list[l[4]] += 1
+            rate_list[l[4]] += seg_mode_time
         else:
-            rate_list[l[4]] = 1
+            rate_list[l[4]] = seg_mode_time
+
+        #success request count
         if l[2]:
             suc_n += 1
+
+        #flu total
         flu_total += l[9]
 
+    #trim users in seg logs
     for u in user_list:
         jam = ifjam(user_list[u])
         user_list[u]["jam"] = jam
@@ -112,7 +164,9 @@ def calculate(file):
         del user_list[u]["seg_s"]
         del user_list[u]["seg_e"]
 
+    #live logs
     for l in live_list:
+        #add users
         if user_list.has_key(l[0]):
             user_list[l[0]]["req_n"] += 1
             if l[2]:
@@ -128,21 +182,29 @@ def calculate(file):
                 "jam": l[6],
                 "s_ip": server_ip
             }
-
+        #channal count
         if channel_list.has_key(l[3]):
             channel_list[l[3]] += 1
         else:
             channel_list[l[3]] = 1
-        if rate_list.has_key(l[4]):
-            rate_list[l[4]] += 1
-        else:
-            rate_list[l[4]] = 1
+
+        #rate_count
+        # if rate_list.has_key(l[4]):
+        #     rate_list[l[4]] += 1
+        # else:
+        #     rate_list[l[4]] = 1
+
+        #success request count
         if l[2]:
             suc_n += 1
+
+        #flu count
         flu_total += l[9]
 
+    #average rate
     rate_a = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
 
+    #write into mongo
     try:
         client = MongoClient(mongo_addr)
         db = client.log_db
@@ -154,7 +216,7 @@ def calculate(file):
         start = file[7:21]
         log_info = {
             "s_ip":server_ip,
-            "start":int(time.mktime((int(start[0:4]),int(start[5:6]),int(start[7:8]),int(start[9:10]),int(start[11:12]),int(start[13:14]),0,0,0))),
+            "start":int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0))),
             "req_n":req_n,
             "suc_n":suc_n,
             "suc_r":round(float(suc_n*100)/req_n,2),
