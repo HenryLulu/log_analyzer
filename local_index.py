@@ -1,6 +1,9 @@
 log_type = 1
 mongo_addr = "mongodb://183.250.179.150:27017,117.145.178.217:27017,117.145.178.218:27017"
-log_dir = "/data/proclog/log/pzs/back"
+if log_type ==1:
+    log_dir = "/data/proclog/log/pzs/back"
+else:
+    log_dir = "/home/fivemin/logback"
 
 from pymongo import *
 import re
@@ -229,12 +232,12 @@ def calculate(file):
             "suc_r":round(float(suc_n*100)/req_n,2),
             "user_n":len(user_list),
             "jam_n":jam_n,
-            "jam_r":round(float(jam_n*100)/len(user_list),2),
+            "freeze_r":round(float(jam_n*100)/len(user_list),2),
             "flu":flu_total,
             "band":round(float(flu_total)*8/300/1024,2),
             "users":ins_user_res.inserted_ids,
             "rate_n":rate_list,
-            "rate_a":rate_a,
+            "bitrate":rate_a,
             "channal_n":channel_list
         }
 
