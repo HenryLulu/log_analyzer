@@ -1,5 +1,5 @@
 log_type = 1
-mongo_addr = "mongodb://183.250.179.150:27017,117.145.178.217:27017,117.145.178.218:27017"
+mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
 if log_type ==1:
     log_dir = "/data/proclog/log/pzs/back"
 else:
