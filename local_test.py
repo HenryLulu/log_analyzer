@@ -32,7 +32,7 @@ def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
     live_re = re.compile(r"^http://(\w+)\..+/live/(flv|ld/trans)/")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
-    logs = open("/Users/henry/bsfiles/"+file,'r').readlines()
+    logs = open("/Users/henry/bsfile/"+file,'r').readlines()
     log_list = []
     live_list = []
 
@@ -109,7 +109,12 @@ def calculate(file):
                 live_list.append(r)
     user_list = {}
     channel_list = {}
-    rate_list = {}
+    rate_list = {
+        "1":0,
+        "2":0,
+        "3":0,
+        "4":0
+    }
     suc_n = 0
     jam_n = 0
     flu_total = 0
@@ -292,6 +297,9 @@ def main():
 
 file="access_20161206094500.log"
 # file="access_20161209110000.log"
-calculate(file)
+try:
+    calculate(file)
+except Exception as e:
+    print type(e),":",e,e.args
 
 #/Users/henry/bsfiles/

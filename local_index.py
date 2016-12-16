@@ -111,7 +111,12 @@ def calculate(file):
                 live_list.append(r)
     user_list = {}
     channel_list = {}
-    rate_list = {}
+    rate_list = {
+        "1":0,
+        "2":0,
+        "3":0,
+        "4":0
+    }
     suc_n = 0
     jam_n = 0
     flu_total = 0
@@ -258,7 +263,7 @@ def calculate(file):
 
         print "Info:Complete"
     except Exception,e:
-        print Exception,":",e
+        print type(e),":",e,e.args
         print "Error:Unable to write to Mongo"
 
 def n_thread(file):
@@ -266,7 +271,7 @@ def n_thread(file):
     try:
         calculate(file)
     except Exception,e:
-        print Exception,":",e
+        print type(e),":",e,e.args
 
 def monitor():
     dir = log_dir
