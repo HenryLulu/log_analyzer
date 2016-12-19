@@ -233,10 +233,11 @@ def calculate(file):
         ins_user_res = user_table.insert_many(user_list.values())
         req_n = len(log_list)+len(live_list)
         start = file[7:21]
+        starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
         if req_n != 0:
             log_info = {
                 "s_ip":server_ip,
-                "start":int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0))),
+                "start":starttm,
                 "req_n":req_n,
                 "suc_n":suc_n,
                 "suc_r":round(float(suc_n*100)/req_n,2),
@@ -253,16 +254,16 @@ def calculate(file):
         else:
             log_info = {
                 "s_ip":server_ip,
-                "start":int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0))),
-                "req_n":req_n,
-                "suc_n":suc_n,
+                "start":starttm,
+                "req_n":0,
+                "suc_n":0,
                 "suc_r":round(float(0),2),
-                "user_n":len(user_list),
-                "jam_n":jam_n,
+                "user_n":0,
+                "jam_n":0,
                 "freeze_r":round(float(0),2),
-                "flu":flu_total,
-                "band":round(float(flu_total)*8/300/1024,2),
-                "users":ins_user_res.inserted_ids,
+                "flu":0,
+                "band":round(float(0),2),
+                "users":[],
                 "rate_n":rate_list,
                 "bitrate":rate_a,
                 "channal_n":channel_list
@@ -323,7 +324,7 @@ def main():
 
 file="access_20161206094500.log"
 # file="access_20161209110000.log"
-file = "test.log"
+file = "access_20161206095000.log"
 try:
     calculate(file)
 except Exception as e:
