@@ -109,6 +109,7 @@ def calculate(file):
                     live_jam = False
                 r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
                 live_list.append(r)
+
     user_list = {}
     channel_list = {}
     rate_list = {
@@ -217,7 +218,10 @@ def calculate(file):
         flu_total += l[9]
 
     #average rate
-    rate_a = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
+    try:
+        rate_a = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
+    except:
+        rate_a = 0
 
     #write into mongo
     try:
@@ -229,22 +233,40 @@ def calculate(file):
         ins_user_res = user_table.insert_many(user_list.values())
         req_n = len(log_list)+len(live_list)
         start = file[7:21]
-        log_info = {
-            "s_ip":server_ip,
-            "start":int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0))),
-            "req_n":req_n,
-            "suc_n":suc_n,
-            "suc_r":round(float(suc_n*100)/req_n,2),
-            "user_n":len(user_list),
-            "jam_n":jam_n,
-            "freeze_r":round(float(jam_n*100)/len(user_list),2),
-            "flu":flu_total,
-            "band":round(float(flu_total)*8/300/1024,2),
-            "users":ins_user_res.inserted_ids,
-            "rate_n":rate_list,
-            "bitrate":rate_a,
-            "channal_n":channel_list
-        }
+        if req_n != 0:
+            log_info = {
+                "s_ip":server_ip,
+                "start":int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0))),
+                "req_n":req_n,
+                "suc_n":suc_n,
+                "suc_r":round(float(suc_n*100)/req_n,2),
+                "user_n":len(user_list),
+                "jam_n":jam_n,
+                "freeze_r":round(float(jam_n*100)/len(user_list),2),
+                "flu":flu_total,
+                "band":round(float(flu_total)*8/300/1024,2),
+                "users":ins_user_res.inserted_ids,
+                "rate_n":rate_list,
+                "bitrate":rate_a,
+                "channal_n":channel_list
+            }
+        else:
+            log_info = {
+                "s_ip":server_ip,
+                "start":int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0))),
+                "req_n":req_n,
+                "suc_n":suc_n,
+                "suc_r":round(float(0),2),
+                "user_n":len(user_list),
+                "jam_n":jam_n,
+                "freeze_r":round(float(0),2),
+                "flu":flu_total,
+                "band":round(float(flu_total)*8/300/1024,2),
+                "users":ins_user_res.inserted_ids,
+                "rate_n":rate_list,
+                "bitrate":rate_a,
+                "channal_n":channel_list
+            }
 
         log_table.insert_one(log_info)
 

@@ -1,6 +1,9 @@
 log_type = 1
-# mongo_addr = "mongodb://183.250.179.150:27017,117.145.178.217:27017,117.145.178.218:27017"
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
+if log_type ==1:
+    log_dir = "/Users/henry/bsfiles"
+else:
+    log_dir = "/home/fivemin/logback"
 
 from pymongo import *
 import re
@@ -32,7 +35,7 @@ def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
     live_re = re.compile(r"^http://(\w+)\..+/live/(flv|ld/trans)/")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
-    logs = open("/Users/henry/bsfile/"+file,'r').readlines()
+    logs = open(log_dir+"/"+file,'r').readlines()
     log_list = []
     live_list = []
 
@@ -105,8 +108,8 @@ def calculate(file):
                 except:
                     live_jam = False
                 r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
-                print r
                 live_list.append(r)
+
     user_list = {}
     channel_list = {}
     rate_list = {
@@ -202,7 +205,6 @@ def calculate(file):
             i = 1
             while i<5:
                 k = str((2500-int(lrm.group(i*2-1)))/500)
-                print k
                 if rate_list.has_key(k):
                     rate_list[k] += int(lrm.group(i*2))
                 else:
@@ -216,7 +218,10 @@ def calculate(file):
         flu_total += l[9]
 
     #average rate
-    rate_a = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
+    try:
+        rate_a = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
+    except:
+        rate_a = 0
 
     #write into mongo
     try:
@@ -228,38 +233,59 @@ def calculate(file):
         ins_user_res = user_table.insert_many(user_list.values())
         req_n = len(log_list)+len(live_list)
         start = file[7:21]
-        log_info = {
-            "s_ip":server_ip,
-            "start":int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0))),
-            "req_n":req_n,
-            "suc_n":suc_n,
-            "suc_r":round(float(suc_n*100)/req_n,2),
-            "user_n":len(user_list),
-            "jam_n":jam_n,
-            "jam_r":round(float(jam_n*100)/len(user_list),2),
-            "flu":flu_total,
-            "band":round(float(flu_total)*8/300/1024,2),
-            "users":ins_user_res.inserted_ids,
-            "rate_n":rate_list,
-            "rate_a":rate_a,
-            "channal_n":channel_list
-        }
+        if req_n != 0:
+            log_info = {
+                "s_ip":server_ip,
+                "start":int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0))),
+                "req_n":req_n,
+                "suc_n":suc_n,
+                "suc_r":round(float(suc_n*100)/req_n,2),
+                "user_n":len(user_list),
+                "jam_n":jam_n,
+                "freeze_r":round(float(jam_n*100)/len(user_list),2),
+                "flu":flu_total,
+                "band":round(float(flu_total)*8/300/1024,2),
+                "users":ins_user_res.inserted_ids,
+                "rate_n":rate_list,
+                "bitrate":rate_a,
+                "channal_n":channel_list
+            }
+        else:
+            log_info = {
+                "s_ip":server_ip,
+                "start":int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0))),
+                "req_n":req_n,
+                "suc_n":suc_n,
+                "suc_r":round(float(0),2),
+                "user_n":len(user_list),
+                "jam_n":jam_n,
+                "freeze_r":round(float(0),2),
+                "flu":flu_total,
+                "band":round(float(flu_total)*8/300/1024,2),
+                "users":ins_user_res.inserted_ids,
+                "rate_n":rate_list,
+                "bitrate":rate_a,
+                "channal_n":channel_list
+            }
 
         log_table.insert_one(log_info)
-        file = open("/Users/henry/bsfiles/out.txt","a")
-        try:
-            del log_info['users']
-            try:
-                del log_info['_id']
-            except:
-                pass
-        except:
-            pass
-        file.write(str(log_info)+'\n')
-        file.close()
+
+        #save result locally
+        # file = open("/data/log_summary","a")
+        # try:
+        #     del log_info['users']
+        #     try:
+        #         del log_info['_id']
+        #     except:
+        #         pass
+        # except:
+        #     pass
+        # file.write(str(log_info)+'\n')
+        # file.close()
+
         print "Info:Complete"
     except Exception,e:
-        print Exception,":",e
+        print type(e),":",e,e.args
         print "Error:Unable to write to Mongo"
 
 def n_thread(file):
@@ -297,6 +323,7 @@ def main():
 
 file="access_20161206094500.log"
 # file="access_20161209110000.log"
+file = "test.log"
 try:
     calculate(file)
 except Exception as e:
