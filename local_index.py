@@ -230,7 +230,12 @@ def calculate(file):
         log_table = db.log_table
         user_table = db.user_table
 
-        ins_user_res = user_table.insert_many(user_list.values())
+        try:
+            ins_user_res = user_table.insert_many(user_list.values())
+        except:
+            ins_user_res = {
+                'inserted_ids':[]
+            }
         req_n = len(log_list)+len(live_list)
         start = file[7:21]
         starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
