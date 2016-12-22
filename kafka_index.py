@@ -39,6 +39,8 @@ def conn_kafka(user_list,log_info):
     user_topic = client.topics['users']
     log_pd = log_topic.get_sync_producer()
     user_pd = user_topic.get_sync_producer()
+    log_pd.produce(log_info)
+    user_pd.produce(user_list)
 
 def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
@@ -269,14 +271,15 @@ def calculate(file):
                 "channal_n":channel_list
             }
 
+    user_list_json = json.JSONEncoder().encode(user_list.values())
+    log_info_json = json.JSONEncoder().encode(log_info)
     #write into kafka
     time.sleep(random.randint(0,30))
     retry_time = 10
     while retry_time>0:
         retry_time -= 1
         try:
-
-            conn_kafka(user_list,log_info)
+            conn_kafka(user_list_json,log_info_json)
             print "Info:Complete"
             break
         except Exception,e:

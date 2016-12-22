@@ -41,9 +41,8 @@ def conn_kafka(user_list,log_info):
     user_topic = client.topics['users']
     log_pd = log_topic.get_sync_producer()
     user_pd = user_topic.get_sync_producer()
-    print user_list
-    print log_info
-
+    log_pd.produce(log_info)
+    user_pd.produce(user_list)
 
 def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
