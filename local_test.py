@@ -1,11 +1,13 @@
 log_type = 1
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
+kafka_addr = "n0.g1.pzt.powzamedia.com:9092,n1.g1.pzt.powzamedia.com:9092,n2.g1.pzt.powzamedia.com:9092"
 if log_type ==1:
     log_dir = "/Users/henry/bsfiles"
 else:
     log_dir = "/home/fivemin/logback"
 
 from pymongo import *
+from pykafka import KafkaClient
 import re
 import os
 import time
@@ -13,6 +15,8 @@ import threading
 import socket
 import fcntl
 import struct
+import json
+import random
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_ip =  socket.inet_ntoa(fcntl.ioctl(
@@ -31,13 +35,26 @@ server_ip = server_ip.replace("\n","")
 def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
+def conn_kafka(user_list,log_info):
+    client = KafkaClient(hosts=kafka_addr)
+    log_topic = client.topics['logs']
+    user_topic = client.topics['users']
+    log_pd = log_topic.get_sync_producer()
+    user_pd = user_topic.get_sync_producer()
+    print user_list
+    print log_info
+
+
 def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
     live_re = re.compile(r"^http://(\w+)\..+/live/(flv|ld/trans)/")
+    m3u8_re = re.compile(r"^http.+index\.(m3u8|bootstrap)")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
     logs = open(log_dir+"/"+file,'r').readlines()
     log_list = []
     live_list = []
+    m3u8_list = []
+    num = 0
 
     #format log lines(normal CDN)
     if log_type==1:
@@ -62,6 +79,7 @@ def calculate(file):
                 segnum = int(req_ma.group(4))
                 r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
                 log_list.append(r)
+                # num +=1
             elif live_re.match(x_group[11]):
                 channel = live_re.match(x_group[11]).group(1)
                 rate = x_group[3]
@@ -71,6 +89,15 @@ def calculate(file):
                     live_jam = False
                 r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
                 live_list.append(r)
+            #     num +=1
+            # elif m3u8_re.match(x_group[11]):
+            #     pass
+            #     m3u8_list.append(("","","","","","","","","",flu))
+            #     num +=1
+            # else:
+            #     pass
+            #     m3u8_list.append(("","","","","","","","","",flu))
+            #     num +=1
 
     #format log lines(Dilian CDN)
     else:
@@ -216,6 +243,8 @@ def calculate(file):
 
         #flu count
         flu_total += l[9]
+    # for m in m3u8_list:
+    #     flu_total += m[9]
 
     #average rate
     try:
@@ -223,18 +252,82 @@ def calculate(file):
     except:
         rate_a = 0
 
-    #write into mongo
-    try:
-        client = MongoClient(mongo_addr)
-        db = client.log_db
-        log_table = db.log_table
-        user_table = db.user_table
+    # # write into mongo
+    # try:
+    #     client = MongoClient(mongo_addr)
+    #     db = client.log_db
+    #     log_table = db.log_table
+    #     user_table = db.user_table
+    #
+    #     try:
+    #         ins_user_res = user_table.insert_many(user_list.values())
+    #     except:
+    #         ins_user_res = {
+    #             'inserted_ids':[]
+    #         }
+    #     req_n = len(log_list)+len(live_list)
+    #     start = file[7:21]
+    #     starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
+    #     if req_n != 0:
+    #         log_info = {
+    #             "s_ip":server_ip,
+    #             "start":starttm,
+    #             "req_n":req_n,
+    #             "suc_n":suc_n,
+    #             "suc_r":round(float(suc_n*100)/req_n,2),
+    #             "user_n":len(user_list),
+    #             "jam_n":jam_n,
+    #             "freeze_r":round(float(jam_n*100)/len(user_list),2),
+    #             "flu":flu_total,
+    #             "band":round(float(flu_total)*8/300/1024,2),
+    #             "users":ins_user_res.inserted_ids,
+    #             "rate_n":rate_list,
+    #             "bitrate":rate_a,
+    #             "channal_n":channel_list
+    #         }
+    #     else:
+    #         log_info = {
+    #             "s_ip":server_ip,
+    #             "start":starttm,
+    #             "req_n":0,
+    #             "suc_n":0,
+    #             "suc_r":round(float(0),2),
+    #             "user_n":0,
+    #             "jam_n":0,
+    #             "freeze_r":round(float(0),2),
+    #             "flu":0,
+    #             "band":round(float(0),2),
+    #             "users":[],
+    #             "rate_n":rate_list,
+    #             "bitrate":rate_a,
+    #             "channal_n":channel_list
+    #         }
+    #
+    #     log_table.insert_one(log_info)
+    #
+    #     #save result locally
+    #     # file = open("/data/log_summary","a")
+    #     # try:
+    #     #     del log_info['users']
+    #     #     try:
+    #     #         del log_info['_id']
+    #     #     except:
+    #     #         pass
+    #     # except:
+    #     #     pass
+    #     # file.write(str(log_info)+'\n')
+    #     # file.close()
+    #
+    #     print "Info:Complete"
+    # except Exception,e:
+    #     print type(e),":",e,e.args
+    #     print "Error:Unable to write to Mongo"
 
-        ins_user_res = user_table.insert_many(user_list.values())
-        req_n = len(log_list)+len(live_list)
-        start = file[7:21]
-        starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
-        if req_n != 0:
+    req_n = len(log_list)+len(live_list)
+    start = file[7:21]
+    starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
+
+    if req_n != 0:
             log_info = {
                 "s_ip":server_ip,
                 "start":starttm,
@@ -246,12 +339,11 @@ def calculate(file):
                 "freeze_r":round(float(jam_n*100)/len(user_list),2),
                 "flu":flu_total,
                 "band":round(float(flu_total)*8/300/1024,2),
-                "users":ins_user_res.inserted_ids,
                 "rate_n":rate_list,
                 "bitrate":rate_a,
                 "channal_n":channel_list
             }
-        else:
+    else:
             log_info = {
                 "s_ip":server_ip,
                 "start":starttm,
@@ -263,31 +355,28 @@ def calculate(file):
                 "freeze_r":round(float(0),2),
                 "flu":0,
                 "band":round(float(0),2),
-                "users":[],
                 "rate_n":rate_list,
                 "bitrate":rate_a,
                 "channal_n":channel_list
             }
+    user_list_json = json.JSONEncoder().encode(user_list.values())
+    log_info_json = json.JSONEncoder().encode(log_info)
 
-        log_table.insert_one(log_info)
-
-        #save result locally
-        # file = open("/data/log_summary","a")
-        # try:
-        #     del log_info['users']
-        #     try:
-        #         del log_info['_id']
-        #     except:
-        #         pass
-        # except:
-        #     pass
-        # file.write(str(log_info)+'\n')
-        # file.close()
-
-        print "Info:Complete"
-    except Exception,e:
-        print type(e),":",e,e.args
-        print "Error:Unable to write to Mongo"
+    #write into kafka
+    time.sleep(random.randint(0,30))
+    retry_time = 10
+    while retry_time>0:
+        retry_time -= 1
+        try:
+            conn_kafka(user_list_json,log_info_json)
+            print "Info:Complete"
+            break
+        except Exception,e:
+            print type(e),":",e,e.args
+            print "Error:Kafka error"
+            time.sleep(5)
+    if retry_time == 0:
+        print "Error:Kafka error and retry failed"
 
 def n_thread(file):
     print file
@@ -324,8 +413,15 @@ def main():
 
 file="access_20161206094500.log"
 # file="access_20161209110000.log"
-file = "access_20161206095000.log"
+# file = "access_20161206095000.log"
+# file="access_20161221103500.log"
+# file="access_20161222095000.log"
 try:
+    client = KafkaClient(hosts=kafka_addr)
+    log_topic = client.topics['logs']
+    user_topic = client.topics['users']
+    log_pd = log_topic.get_sync_producer()
+    user_pd = user_topic.get_sync_producer()
     calculate(file)
 except Exception as e:
     print type(e),":",e,e.args
