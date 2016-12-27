@@ -97,7 +97,7 @@ def calculate(file):
             #     pass
             #     m3u8_list.append(("","","","","","","","","",flu))
             #     num +=1
-
+        print "first roll"
     #format log lines(Dilian CDN)
     else:
         for l in logs:
@@ -189,6 +189,7 @@ def calculate(file):
 
         #flu total
         flu_total += l[9]
+    print "list roll"
 
     #trim users in seg logs
     for u in user_list:
@@ -201,6 +202,7 @@ def calculate(file):
         del user_list[u]["seg_s"]
         del user_list[u]["seg_e"]
 
+    print "user roll"
     #live logs
     for l in live_list:
         #add users
@@ -235,6 +237,7 @@ def calculate(file):
                     rate_list[k] += int(lrm.group(i*2))
                 else:
                     rate_list[k] = int(lrm.group(i*2))
+                i += 1
 
         #success request count
         if l[2]:
@@ -244,7 +247,7 @@ def calculate(file):
         flu_total += l[9]
     # for m in m3u8_list:
     #     flu_total += m[9]
-
+    print "live roll"
     #average rate
     try:
         rate_a = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
@@ -362,7 +365,7 @@ def calculate(file):
     log_info_json = json.JSONEncoder().encode(log_info)
 
     #write into kafka
-    time.sleep(random.randint(0,30))
+    # time.sleep(random.randint(0,30))
     retry_time = 10
     while retry_time>0:
         retry_time -= 1
@@ -376,6 +379,9 @@ def calculate(file):
             time.sleep(5)
     if retry_time == 0:
         print "Error:Kafka error and retry failed"
+
+
+    print round(float(flu_total)*8/300/1024,2)
 
 def n_thread(file):
     print file
@@ -414,13 +420,17 @@ file="access_20161206094500.log"
 # file="access_20161209110000.log"
 # file = "access_20161206095000.log"
 # file="access_20161221103500.log"
-# file="access_20161222095000.log"
+file="access_20161222095000.log"
+# file="access_20161222155000.log"
+# file="access_20161222163000.log"
+file="access_20161227100000.log"
 try:
     client = KafkaClient(hosts=kafka_addr)
     log_topic = client.topics['logs']
     user_topic = client.topics['users']
     log_pd = log_topic.get_sync_producer()
     user_pd = user_topic.get_sync_producer()
+    print "start"
     calculate(file)
 except Exception as e:
     print type(e),":",e,e.args

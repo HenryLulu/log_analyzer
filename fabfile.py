@@ -2,20 +2,14 @@ from fabric.api import *
 #use "fab function_name" in console to do a job
 
 env.passwords = {
-    'root@113.6.235.22:12321':'ir8ayqvrjaxkumk0af',
-    'root@113.6.235.23:12321':'cr9ftwlbiiy6mxhymc',
-    'root@113.6.235.59:12321':'fzzy1wrorqohr7aupi',
-    'root@113.6.235.60:12321':'fh0icvs3lndzbshunp',
-    'root@113.6.235.61:12321':'lgirsxgehun61tpwmn',
-    'root@183.250.179.150:12321':'sh3aiecgmakjb9urdc'
+    'root@tj:12321':'qqnkm4kevgjtsetq1c',
+    'root@sd1:12321':'ejidjwmipv7wryf4qm',
+    'root@sd2:12321':'hgo8poyy9rxnxsokxk'
 }
 env.hosts = [
-    'root@113.6.235.22:12321',
-    'root@113.6.235.23:12321',
-    'root@113.6.235.59:12321',
-    'root@113.6.235.60:12321',
-    'root@113.6.235.61:12321',
-    'root@183.250.179.150:12321'
+    'root@tj:12321',
+    'root@sd1:12321',
+    'root@sd2:12321'
 ]
 
 def upload():
@@ -43,3 +37,27 @@ def clear():
 
 def fetch(file):
     get('/data/proclog/log/pzs/back/'+file,'/Users/henry/bsfiles/access.log')
+
+def up_cons():
+    put('kafka_consumer.py', '/usr/local/kafka_consumer/kafka_consumer.py')
+def re_cons():
+    try:
+        run("ps -ef|grep kafka_consumer.py|grep -v grep|awk '{print $2}'|xargs kill -9")
+    finally:
+        with cd("/data/kafka_nohup/consumer/"):
+            run("nohup python -u /usr/local/kafka_consumer/kafka_consumer.py & sleep 1")
+def kill_cons():
+    try:
+        run("ps -ef|grep kafka_consumer.py|grep -v grep|awk '{print $2}'|xargs kill -9")
+    finally:
+        pass
+
+def check_cons():
+    run("ps -ef|grep kafka_consumer.py|grep -v grep")
+def log_cons():
+    with cd("/data/kafka_nohup/consumer/"):
+        run("tail -n 100 nohup.out")
+def clear_cons():
+    with cd("/data/kafka_nohup/consumer/"):
+        run("cat /dev/null > nohup.out")
+

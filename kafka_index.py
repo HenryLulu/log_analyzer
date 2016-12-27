@@ -220,6 +220,7 @@ def calculate(file):
                     rate_list[k] += int(lrm.group(i*2))
                 else:
                     rate_list[k] = int(lrm.group(i*2))
+                i += 1
 
         #success request count
         if l[2]:
