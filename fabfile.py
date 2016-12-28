@@ -61,3 +61,7 @@ def clear_cons():
     with cd("/data/kafka_nohup/consumer/"):
         run("cat /dev/null > nohup.out")
 
+def free_com(where,what):
+    with cd(where):
+        run(what)
+

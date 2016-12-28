@@ -7,7 +7,8 @@ else:
     log_dir = "/home/fivemin/logback"
 
 from pymongo import *
-from pykafka import KafkaClient
+# from pykafka import KafkaClient
+from kafka import KafkaClient, SimpleProducer, SimpleConsumer
 import re
 import os
 import time
@@ -37,12 +38,15 @@ def ifjam(u):
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
 def conn_kafka(user_list,log_info):
     client = KafkaClient(hosts=kafka_addr)
-    log_topic = client.topics['logs']
-    user_topic = client.topics['users']
-    log_pd = log_topic.get_sync_producer()
-    user_pd = user_topic.get_sync_producer()
-    log_pd.produce(log_info)
-    user_pd.produce(user_list)
+    producer = SimpleProducer(client,async=True)
+    producer.send_messages("logs",log_info)
+    producer.send_messages("users",user_list)
+    # log_topic = client.topics['logs']
+    # user_topic = client.topics['users']
+    # log_pd = log_topic.get_sync_producer()
+    # user_pd = user_topic.get_sync_producer()
+    # log_pd.produce(log_info)
+    # user_pd.produce(user_list)
 
 def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
@@ -425,11 +429,11 @@ file="access_20161222095000.log"
 # file="access_20161222163000.log"
 file="access_20161227100000.log"
 try:
-    client = KafkaClient(hosts=kafka_addr)
-    log_topic = client.topics['logs']
-    user_topic = client.topics['users']
-    log_pd = log_topic.get_sync_producer()
-    user_pd = user_topic.get_sync_producer()
+    # client = KafkaClient(hosts=kafka_addr)
+    # log_topic = client.topics['logs']
+    # user_topic = client.topics['users']
+    # log_pd = log_topic.get_sync_producer()
+    # user_pd = user_topic.get_sync_producer()
     print "start"
     calculate(file)
 except Exception as e:
