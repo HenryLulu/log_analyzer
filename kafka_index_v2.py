@@ -411,10 +411,12 @@ def calculate(file):
     log_info['start'] = starttm
     log_info['req_n'] = total['req_n']
     log_info['suc_n'] = total['suc_n']
-    log_info['suc_r'] = round(float(total['suc_n']*100)/total['req_n'],2)
+    if total['req_n']!=0:
+        log_info['suc_r'] = round(float(total['suc_n']*100)/total['req_n'],2)
     log_info['user_n'] = len(user_list)
     log_info['jam_n'] = total['jam_n']
-    log_info['freeze_r'] = round(float(total['jam_n']*100)/len(user_list),2)
+    if len(user_list)!=0:
+        log_info['freeze_r'] = round(float(total['jam_n']*100)/len(user_list),2)
     log_info['flu'] = total['flu']
     log_info['band'] = total['band']
     log_info['rate_n'] = total['rate_n']
