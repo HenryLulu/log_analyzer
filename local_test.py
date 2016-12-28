@@ -50,7 +50,7 @@ def conn_kafka(user_list,log_info):
 
 def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
-    live_re = re.compile(r"^http://(\w+)\..+/live/(flv|ld/trans)/")
+    live_re = re.compile(r"^http://(\w+)\..+/live/(ld/flv|ld/trans|flv|trans)/")
     m3u8_re = re.compile(r"^http.+index\.(m3u8|bootstrap)")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
     logs = open(log_dir+"/"+file,'r').readlines()
@@ -374,7 +374,9 @@ def calculate(file):
     while retry_time>0:
         retry_time -= 1
         try:
-            conn_kafka(user_list_json,log_info_json)
+            # conn_kafka(user_list_json,log_info_json)
+            print user_list_json
+            print log_info_json
             print "Info:Complete"
             break
         except Exception,e:
