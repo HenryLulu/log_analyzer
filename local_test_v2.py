@@ -36,17 +36,26 @@ server_ip = server_ip.replace("\n","")
 def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
-def conn_kafka(user_list,log_info):
-    client = KafkaClient(hosts=kafka_addr)
-    producer = SimpleProducer(client,async=True)
-    producer.send_messages("logs",log_info)
-    producer.send_messages("users",user_list)
-    # log_topic = client.topics['logs']
-    # user_topic = client.topics['users']
-    # log_pd = log_topic.get_sync_producer()
-    # user_pd = user_topic.get_sync_producer()
-    # log_pd.produce(log_info)
-    # user_pd.produce(user_list)
+def conn_kafka(user_list,log_info,log_state,user_state):
+    try:
+        client = KafkaClient(hosts=kafka_addr)
+        producer = SimpleProducer(client,async=True)
+        if log_state==False:
+            try:
+                producer.send_messages("logs",log_info)
+                log_state=True
+            except:
+                log_state=False
+        if user_state==False:
+            try:
+                producer.send_messages("users",user_list)
+                user_state=True
+            except:
+                user_state=False
+    except Exception,e:
+        print Exception,":",e
+
+    return (log_state,user_state)
 
 def calculate(file):
     req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
@@ -444,16 +453,25 @@ def calculate(file):
     #write into kafka
     # time.sleep(random.randint(0,30))
     retry_time = 10
+    log_state = False
+    user_state = False
     while retry_time>0:
         retry_time -= 1
-        try:
-            conn_kafka(user_list_json,log_info_json)
+        res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
+        log_state = res[0]
+        user_state = res[1]
+        if log_state and user_state:
             print "Info:Complete"
             break
-        except Exception,e:
-            print type(e),":",e,e.args
-            print "Error:Kafka error"
-            time.sleep(5)
+        time.sleep(5)
+        # try:
+        #     conn_kafka(user_list_json,log_info_json)
+        #     print "Info:Complete"
+        #     break
+        # except Exception,e:
+        #     print type(e),":",e,e.args
+        #     print "Error:Kafka error"
+        #     time.sleep(5)
     if retry_time == 0:
         print "Error:Kafka error and retry failed"
 
@@ -500,7 +518,7 @@ file="access_20161206094500.log"
 # file="access_20161222095000.log"
 # file="access_20161222155000.log"
 # file="access_20161222163000.log"
-# file="access_20161227100000.log"
+file="access_20161227100000.log"
 try:
     # client = KafkaClient(hosts=kafka_addr)
     # log_topic = client.topics['logs']
