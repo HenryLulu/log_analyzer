@@ -370,16 +370,13 @@ def calculate(file):
                 else:
                     total['channel_n'][l[3]] = l[9]
 
-                lrm = long_rate_re.match(l[4])
-                if lrm:
-                    i = 1
-                    while i<5:
-                        k = str((2500-int(lrm.group(i*2-1)))/500)
-                        if rate_list.has_key(k):
-                            rate_list[k] += int(lrm.group(i*2))
-                        else:
-                            rate_list[k] = int(lrm.group(i*2))
-                        i += 1
+                lrms = long_rate_re.findall(l[4])
+                for lrm in lrms:
+                    k = str((2500-int(lrm[0]))/500)
+                    if rate_list.has_key(k):
+                        rate_list[k] += int(lrm[1])
+                    else:
+                        rate_list[k] = int(lrm[1])
 
                 if l[2]:
                     current_category['suc_n'] += 1
