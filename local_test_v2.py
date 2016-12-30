@@ -1,10 +1,10 @@
-log_type = 1
+log_type = 2
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
 kafka_addr = "n0.g1.pzt.powzamedia.com:9092,n1.g1.pzt.powzamedia.com:9092,n2.g1.pzt.powzamedia.com:9092"
 if log_type ==1:
     log_dir = "/Users/henry/bsfiles"
 else:
-    log_dir = "/home/fivemin/logback"
+    log_dir = "/Users/henry/bsfiles"
 
 from pymongo import *
 # from pykafka import KafkaClient
@@ -272,6 +272,7 @@ def calculate(file):
             flu = int(x_group[6])
 
             req_ma = req_re.match(x_group[8])
+            live_ma = live_re.match(x_group[8])
             if req_ma:
                 channel = req_ma.group(1)
                 rate = str(int(req_ma.group(2))%5)
@@ -282,8 +283,9 @@ def calculate(file):
                     top_list['hds_1']['list'].append(r)
                 else:
                     top_list['hls_0']['list'].append(r)
-            elif live_re.match(x_group[11]):
-                channel = live_re.match(x_group[8]).group(1)
+            elif live_ma:
+                type = live_ma.group(2)
+                channel = live_ma.group(1)
                 rate = x_group[35].replace("\r\n","")
                 try:
                     live_jam = int(x_group[34])>0
@@ -519,6 +521,7 @@ file="access_20161206094500.log"
 # file="access_20161222155000.log"
 # file="access_20161222163000.log"
 file="access_20161227100000.log"
+file="access_20161229134500.log"
 try:
     # client = KafkaClient(hosts=kafka_addr)
     # log_topic = client.topics['logs']

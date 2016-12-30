@@ -264,6 +264,7 @@ def calculate(file):
             flu = int(x_group[6])
 
             req_ma = req_re.match(x_group[8])
+            live_ma = live_re.match(x_group[8])
             if req_ma:
                 channel = req_ma.group(1)
                 rate = str(int(req_ma.group(2))%5)
@@ -274,8 +275,9 @@ def calculate(file):
                     top_list['hds_1']['list'].append(r)
                 else:
                     top_list['hls_0']['list'].append(r)
-            elif live_re.match(x_group[11]):
-                channel = live_re.match(x_group[8]).group(1)
+            elif live_ma:
+                type = live_ma.group(2)
+                channel = live_ma.group(1)
                 rate = x_group[35].replace("\r\n","")
                 try:
                     live_jam = int(x_group[34])>0
