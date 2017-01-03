@@ -1,6 +1,7 @@
-log_type = 2
+log_type = 1
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
-kafka_addr = "n0.g1.pzt.powzamedia.com:9092,n1.g1.pzt.powzamedia.com:9092,n2.g1.pzt.powzamedia.com:9092"
+# kafka_addr = "n0.g1.pzt.powzamedia.com:9092,n1.g1.pzt.powzamedia.com:90921,n2.g1.pzt.powzamedia.com:90921"
+kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1a.g1.pzt.powzamedia.com:90922","n2a.g1.pzt.powzamedia.com:90922"]
 if log_type ==1:
     log_dir = "/Users/henry/bsfiles"
 else:
@@ -8,7 +9,7 @@ else:
 
 from pymongo import *
 # from pykafka import KafkaClient
-from kafka import KafkaClient, SimpleProducer, SimpleConsumer
+from kafka import KafkaProducer
 import re
 import os
 import time
@@ -30,7 +31,7 @@ except:
     if len(ips) > 0:
         server_ip = ips[0]
     else:
-        server_ip = "unknow"
+        server_ip = "999.999.999.999"
 server_ip = server_ip.replace("\n","")
 
 def ifjam(u):
@@ -38,18 +39,21 @@ def ifjam(u):
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
 def conn_kafka(user_list,log_info,log_state,user_state):
     try:
-        client = KafkaClient(hosts=kafka_addr)
-        producer = SimpleProducer(client,async=True)
+        producer = KafkaProducer(bootstrap_servers=kafka_addr)
         if log_state==False:
             try:
-                producer.send_messages("logs",log_info)
-                log_state=True
+                res_log = producer.send("logs",log_info)
+                time.sleep(5)
+                if res_log.is_done:
+                    log_state=True
             except:
                 log_state=False
         if user_state==False:
             try:
-                producer.send_messages("users",user_list)
-                user_state=True
+                res_user = producer.send("users",user_list)
+                time.sleep(5)
+                if res_user.is_done:
+                    user_state=True
             except:
                 user_state=False
     except Exception,e:
@@ -446,7 +450,7 @@ def calculate(file):
         log_info['bitrate'] = 0
     log_info['channel_n'] = total['channel_n']
 
-    user_list_json = json.JSONEncoder().encode([])
+    user_list_json = json.JSONEncoder().encode(user_list)
     log_info_json = json.JSONEncoder().encode(log_info)
 
     #write into kafka
@@ -510,7 +514,7 @@ def main():
         print "Error:Init fail"
 
 
-file="access_20161206094500.log"
+# file="access_20161206094500.log"
 # file="access_20161209110000.log"
 # file = "access_20161206095000.log"
 # file="access_20161221103500.log"
@@ -518,7 +522,7 @@ file="access_20161206094500.log"
 # file="access_20161222155000.log"
 # file="access_20161222163000.log"
 file="access_20161227100000.log"
-file="access_20161229134500.log"
+# file="access_20161229134500.log"
 try:
     # client = KafkaClient(hosts=kafka_addr)
     # log_topic = client.topics['logs']

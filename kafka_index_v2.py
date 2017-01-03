@@ -5,7 +5,7 @@ if log_type ==1:
 else:
     log_dir = "/home/fivemin/logback"
 
-from kafka import KafkaClient, SimpleProducer, SimpleConsumer
+from kafka import KafkaProducer
 import re
 import os
 import time
@@ -35,18 +35,21 @@ def ifjam(u):
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
 def conn_kafka(user_list,log_info,log_state,user_state):
     try:
-        client = KafkaClient(hosts=kafka_addr)
-        producer = SimpleProducer(client,async=True)
+        producer = KafkaProducer(bootstrap_servers=kafka_addr)
         if log_state==False:
             try:
-                producer.send_messages("logs",log_info)
-                log_state=True
+                res_log = producer.send("logs",log_info)
+                time.sleep(5)
+                if res_log.is_done:
+                    log_state=True
             except:
                 log_state=False
         if user_state==False:
             try:
-                producer.send_messages("users",user_list)
-                user_state=True
+                res_user = producer.send("users",user_list)
+                time.sleep(5)
+                if res_user.is_done:
+                    user_state=True
             except:
                 user_state=False
     except Exception,e:
