@@ -1,9 +1,9 @@
 log_type = 1
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
 # kafka_addr = "n0.g1.pzt.powzamedia.com:9092,n1.g1.pzt.powzamedia.com:90921,n2.g1.pzt.powzamedia.com:90921"
-kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1a.g1.pzt.powzamedia.com:90922","n2a.g1.pzt.powzamedia.com:90922"]
+kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
-    log_dir = "/Users/henry/bsfiles"
+    log_dir = "/Users/henry/bsfiles/test"
 else:
     log_dir = "/Users/henry/bsfiles"
 
@@ -18,6 +18,7 @@ import socket
 import fcntl
 import struct
 import json
+json.encoder.FLOAT_REPR = lambda x: format(x, '.2f')
 import random
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -254,7 +255,6 @@ def calculate(file):
                 if top_list.has_key(type):
                     top_list[type]['list'].append(r)
 
-        print "first roll"
     #format log lines(Dilian CDN)
     else:
         for l in logs:
@@ -467,14 +467,6 @@ def calculate(file):
             print "Info:Complete"
             break
         time.sleep(5)
-        # try:
-        #     conn_kafka(user_list_json,log_info_json)
-        #     print "Info:Complete"
-        #     break
-        # except Exception,e:
-        #     print type(e),":",e,e.args
-        #     print "Error:Kafka error"
-        #     time.sleep(5)
     if retry_time == 0:
         print "Error:Kafka error and retry failed"
 
@@ -521,8 +513,16 @@ def main():
 # file="access_20161222095000.log"
 # file="access_20161222155000.log"
 # file="access_20161222163000.log"
-file="access_20161227100000.log"
+# file="access_20161227100000.log"
 # file="access_20161229134500.log"
+files = [
+    "access_20170102121500.log",
+    # "access_20170103122000.log",
+    # "access_20170103160500.log",
+    # "access_20170103164000.log",
+    # "access_20170103164500.log",
+    # "access_20170103165000.log",
+]
 try:
     # client = KafkaClient(hosts=kafka_addr)
     # log_topic = client.topics['logs']
@@ -530,7 +530,9 @@ try:
     # log_pd = log_topic.get_sync_producer()
     # user_pd = user_topic.get_sync_producer()
     print "start"
-    calculate(file)
+    for file in files:
+        print file
+        calculate(file)
 except Exception as e:
     print type(e),":",e,e.args
 

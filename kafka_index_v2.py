@@ -1,5 +1,5 @@
 log_type = 1
-kafka_addr = "n0.g1.pzt.powzamedia.com:9092,n1.g1.pzt.powzamedia.com:9092,n2.g1.pzt.powzamedia.com:9092"
+kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
     log_dir = "/data/proclog/log/pzs/back"
 else:
@@ -52,6 +52,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
                     user_state=True
             except:
                 user_state=False
+        producer.close()
     except Exception,e:
         print Exception,":",e
     return (log_state,user_state)
@@ -476,10 +477,11 @@ def monitor():
         final = set([_f[2] for _f in os.walk(dir)][0])
         dif = final.difference(origin)
         origin = final
-        while len(dif) > 0:     #change to while
+        while len(dif) > 0:
             try:
                 file = dif.pop()
                 if re.compile(r"^access_.+log$").match(file):
+                    time.sleep(10)
                     t = threading.Thread(target = n_thread, args = (file,))
                     t.start()
                     t.join()
