@@ -30,6 +30,11 @@ except:
         server_ip = "unknow"
 server_ip = server_ip.replace("\n","")
 
+def write_log(log):
+    file = open("./info.log","a")
+    file.write(log + "\n")
+    file.close()
+
 def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
@@ -55,6 +60,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
         producer.close()
     except Exception,e:
         print Exception,":",e
+        write_log(str(Exception)+":"+str(e)+str(e.args))
     return (log_state,user_state)
 
 def calculate(file):
@@ -457,17 +463,21 @@ def calculate(file):
         user_state = res[1]
         if log_state and user_state:
             print "Info:Complete"
+            write_log("Complete")
             break
         time.sleep(5)
     if retry_time == 0:
         print "Error:Kafka error and retry failed"
+        write_log("Error:Kafka error and retry failed")
 
 def n_thread(file):
     print file
+    write_log(file)
     try:
         calculate(file)
     except Exception,e:
         print Exception,":",e
+        write_log(str(Exception)+":"+str(e)+str(e.args))
 
 def monitor():
     dir = log_dir
@@ -487,12 +497,15 @@ def monitor():
                     t.join()
             except:
                 print "Error:Unable to create new thread"
+                write_log("Error:Unable to create new thread")
 
 def main():
     print "start..."+server_ip
+    write_log("start..."+server_ip)
     try:
         monitor()
     except:
         print "Error:Init fail"
+        write_log("Error:Init fail")
 
 main()
