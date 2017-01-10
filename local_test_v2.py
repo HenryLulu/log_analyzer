@@ -1,6 +1,5 @@
 log_type = 1
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
-# kafka_addr = "n0.g1.pzt.powzamedia.com:9092,n1.g1.pzt.powzamedia.com:90921,n2.g1.pzt.powzamedia.com:90921"
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 kafka_addr = ["n01.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
