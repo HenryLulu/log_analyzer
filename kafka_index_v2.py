@@ -14,6 +14,7 @@ import socket
 import fcntl
 import struct
 import json
+json.encoder.FLOAT_REPR = lambda x: format(x, '.2f')
 import random
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -31,7 +32,8 @@ except:
 server_ip = server_ip.replace("\n","")
 
 def write_log(log):
-    file = open("./info.log","a")
+    print log
+    file = open("/usr/local/pzs/pzt/info.log","a")
     file.write(log + "\n")
     file.close()
 
@@ -39,8 +41,17 @@ def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
 def conn_kafka(user_list,log_info,log_state,user_state):
-    try:
-        producer = KafkaProducer(bootstrap_servers=kafka_addr)
+    random.shuffle(kafka_addr)
+    producer = None
+    #find an available broker
+    for broker in kafka_addr:
+        try:
+            producer = KafkaProducer(bootstrap_servers=broker)
+            write_log("connected to broker: "+broker)
+            break
+        except Exception,e:
+            write_log(str(Exception)+":"+str(e)+"\n broker: "+broker+" is not available")
+    if producer is not None:
         if log_state==False:
             try:
                 res_log = producer.send("logs",log_info)
@@ -58,9 +69,9 @@ def conn_kafka(user_list,log_info,log_state,user_state):
             except:
                 user_state=False
         producer.close()
-    except Exception,e:
-        print Exception,":",e
-        write_log(str(Exception)+":"+str(e)+str(e.args))
+    else:
+        write_log("no broker available")
+
     return (log_state,user_state)
 
 def calculate(file):
@@ -462,21 +473,18 @@ def calculate(file):
         log_state = res[0]
         user_state = res[1]
         if log_state and user_state:
-            print "Info:Complete"
             write_log("Complete")
             break
         time.sleep(5)
     if retry_time == 0:
-        print "Error:Kafka error and retry failed"
         write_log("Error:Kafka error and retry failed")
+        os._exit(0)
 
 def n_thread(file):
-    print file
     write_log(file)
     try:
         calculate(file)
     except Exception,e:
-        print Exception,":",e
         write_log(str(Exception)+":"+str(e)+str(e.args))
 
 def monitor():
@@ -496,16 +504,13 @@ def monitor():
                     t.start()
                     t.join()
             except:
-                print "Error:Unable to create new thread"
                 write_log("Error:Unable to create new thread")
 
 def main():
-    print "start..."+server_ip
     write_log("start..."+server_ip)
     try:
         monitor()
     except:
-        print "Error:Init fail"
         write_log("Error:Init fail")
 
 main()

@@ -1,7 +1,8 @@
 log_type = 1
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
 # kafka_addr = "n0.g1.pzt.powzamedia.com:9092,n1.g1.pzt.powzamedia.com:90921,n2.g1.pzt.powzamedia.com:90921"
-kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
+kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
+kafka_addr = ["n01.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
     log_dir = "/Users/henry/bsfiles/test"
 else:
@@ -36,6 +37,7 @@ except:
 server_ip = server_ip.replace("\n","")
 
 def write_log(log):
+    print log
     file = open("./info.log","a")
     file.write(log + "\n")
     file.close()
@@ -44,8 +46,17 @@ def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
 def conn_kafka(user_list,log_info,log_state,user_state):
-    try:
-        producer = KafkaProducer(bootstrap_servers=kafka_addr)
+    random.shuffle(kafka_addr)
+    producer = None
+    #find an available broker
+    for broker in kafka_addr:
+        try:
+            producer = KafkaProducer(bootstrap_servers=broker)
+            write_log("connected to broker: "+broker)
+            break
+        except Exception,e:
+            write_log(str(Exception)+":"+str(e)+"\n broker: "+broker+" is not available")
+    if producer is not None:
         if log_state==False:
             try:
                 res_log = producer.send("logs",log_info)
@@ -62,9 +73,9 @@ def conn_kafka(user_list,log_info,log_state,user_state):
                     user_state=True
             except:
                 user_state=False
-    except Exception,e:
-        print Exception,":",e
-        write_log(str(Exception)+":"+str(e))
+        producer.close()
+    else:
+        write_log("no broker available")
 
     return (log_state,user_state)
 
@@ -470,25 +481,20 @@ def calculate(file):
         log_state = res[0]
         user_state = res[1]
         if log_state and user_state:
-            print "Info:Complete"
             write_log("Complete")
             break
         time.sleep(5)
     if retry_time == 0:
-        print "Error:Kafka error and retry failed"
         write_log("Error:Kafka error and retry failed")
 
 
-    print round(float(log_info['flu'])*8/300/1024,2)
     write_log(str(round(float(log_info['flu'])*8/300/1024,2)))
 
 def n_thread(file):
-    print file
     write_log(file)
     try:
         calculate(file)
     except Exception,e:
-        print Exception,":",e
         write_log(str(Exception)+":"+str(e))
 
 def monitor():
@@ -507,16 +513,13 @@ def monitor():
                     t.start()
                     t.join()
             except:
-                print "Error:Unable to create new thread"
                 write_log("Error:Unable to create new thread")
 
 def main():
-    print "start..."+server_ip
     write_log("start..."+server_ip)
     try:
         monitor()
     except:
-        print "Error:Init fail"
         write_log("Error:Init fail")
 
 
@@ -543,14 +546,11 @@ try:
     # user_topic = client.topics['users']
     # log_pd = log_topic.get_sync_producer()
     # user_pd = user_topic.get_sync_producer()
-    print "start"
     write_log("start")
     for file in files:
-        print file
         write_log(file)
         calculate(file)
 except Exception as e:
-    print type(e),":",e,e.args
     write_log(str(Exception)+":"+str(e)+str(e.args))
 
 #/Users/henry/bsfiles/
