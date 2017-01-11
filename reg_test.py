@@ -1,19 +1,8 @@
 import re
+ip = "172.15.1.1\n"
 
-str1 = "500_1|850_2|1500_3|2000_4"
+ip_re = re.compile(r"(10\..+)|(172\.((1[6-9])|(2[0-9])|(3[0-1]))\..+)|(192\.168\..+)")
 
-long_rate_re = re.compile(r'(\d+)_(\d+)')
+req_ma = not ip_re.match(ip)
 
-lrms = long_rate_re.findall(str1)
-print lrms
-rate_list = {
-    '1':10
-}
-for lrm in lrms:
-    k = str((2500-int(lrm[0]))/500)
-    if rate_list.has_key(k):
-        rate_list[k] += int(lrm[1])
-    else:
-        rate_list[k] = int(lrm[1])
-
-print rate_list
+print ""

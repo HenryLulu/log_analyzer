@@ -28,12 +28,13 @@ try:
         struct.pack('256s', 'eth5'[:15])
     )[20:24])
 except:
-    ips = os.popen("LANG=C ifconfig | grep \"inet addr\" | grep -v \"127.0.0.1\" | awk -F \":\" '{print $2}' | awk '{print $1}'").readlines()
-    if len(ips) > 0:
-        server_ip = ips[0]
-    else:
-        server_ip = "999.999.999.999"
-server_ip = server_ip.replace("\n","")
+    in_ip_re = re.compile(r"(10\..+)|(172\.((1[6-9])|(2[0-9])|(3[0-1]))\..+)|(192\.168\..+)")
+    server_ip = "unknow"
+    ips = os.popen("LANG=C ifconfig | grep \"inet addr\" | grep -v \"127.0.0.1\" |grep -v \"0.0.0.0\"| awk -F \":\" '{print $2}' | awk '{print $1}'").readlines()
+    for ip in ips:
+        ip = ip.replace("\n","")
+        if not in_ip_re.match(ip):
+            server_ip = ip
 
 def write_log(log):
     print log
