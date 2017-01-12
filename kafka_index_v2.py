@@ -3,7 +3,7 @@ kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n
 if log_type ==1:
     log_dir = "/data/proclog/log/pzs/back"
 else:
-    log_dir = "/home/fivemin/logback"
+    log_dir = "/data/proclog/logback"
 
 from kafka import KafkaProducer
 import re

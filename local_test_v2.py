@@ -1,9 +1,9 @@
 log_type = 1
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
-kafka_addr = ["n01.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
+# kafka_addr = ["n01.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
-    log_dir = "/Users/henry/bsfiles/test"
+    log_dir = "/Users/henry/bsfiles"
 else:
     log_dir = "/Users/henry/bsfiles"
 
@@ -533,7 +533,7 @@ def main():
 # file="access_20161227100000.log"
 # file="access_20161229134500.log"
 files = [
-    "access_20170102121500.log",
+    "access_20170111234000.log",
     # "access_20170103122000.log",
     # "access_20170103160500.log",
     # "access_20170103164000.log",
