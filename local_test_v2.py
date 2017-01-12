@@ -20,6 +20,7 @@ import struct
 import json
 json.encoder.FLOAT_REPR = lambda x: format(x, '.2f')
 import random
+import signal
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_ip =  socket.inet_ntoa(fcntl.ioctl(
@@ -46,6 +47,7 @@ def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
 def conn_kafka(user_list,log_info,log_state,user_state):
+    time.sleep(30)
     random.shuffle(kafka_addr)
     producer = None
     #find an available broker
@@ -489,7 +491,9 @@ def calculate(file):
 
 
     write_log(str(round(float(log_info['flu'])*8/300/1024,2)))
-
+def handler(signum, frame):
+    write_log("log timeout")
+    raise AssertionError
 def n_thread(file):
     write_log(file)
     try:
@@ -509,11 +513,16 @@ def monitor():
             try:
                 file = dif.pop()
                 if re.compile(r"^access_.+log$").match(file):
-                    t = threading.Thread(target = n_thread, args = (file,))
-                    t.start()
-                    t.join()
-            except:
-                write_log("Error:Unable to create new thread")
+                    write_log(file)
+                    try:
+                        calculate(file)
+                    except Exception,e:
+                        write_log(str(Exception)+":"+str(e))
+                    # t = threading.Thread(target = n_thread, args = (file,))
+                    # t.start()
+                    # t.join()
+            except Exception,e:
+                write_log(str(Exception)+":"+str(e))
 
 def main():
     write_log("start..."+server_ip)
@@ -549,7 +558,13 @@ try:
     write_log("start")
     for file in files:
         write_log(file)
-        calculate(file)
+        try:
+            signal.signal(signal.SIGALRM, handler)
+            signal.alarm(10)
+            calculate(file)
+            signal.alarm(0)
+        except Exception,e:
+            write_log(str(Exception)+":"+str(e))
 except Exception as e:
     write_log(str(Exception)+":"+str(e)+str(e.args))
 

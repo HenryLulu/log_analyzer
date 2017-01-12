@@ -16,6 +16,7 @@ import struct
 import json
 json.encoder.FLOAT_REPR = lambda x: format(x, '.2f')
 import random
+import signal
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_ip =  socket.inet_ntoa(fcntl.ioctl(
@@ -464,7 +465,6 @@ def calculate(file):
     log_info_json = json.JSONEncoder().encode(log_info)
 
     #write into kafka
-    time.sleep(random.randint(0,30))
     retry_time = 10
     log_state = False
     user_state = False
@@ -481,8 +481,10 @@ def calculate(file):
         write_log("Error:Kafka error and retry failed")
         os._exit(0)
 
+def handler(signum, frame):
+    write_log("Error: Log Timeout")
+    raise AssertionError
 def n_thread(file):
-    write_log(file)
     try:
         calculate(file)
     except Exception,e:
@@ -498,14 +500,19 @@ def monitor():
         origin = final
         while len(dif) > 0:
             try:
+                signal.signal(signal.SIGALRM, handler)
+                signal.alarm(240)
                 file = dif.pop()
                 if re.compile(r"^access_.+log$").match(file):
-                    time.sleep(10)
-                    t = threading.Thread(target = n_thread, args = (file,))
-                    t.start()
-                    t.join()
-            except:
-                write_log("Error:Unable to create new thread")
+                    write_log(file)
+                    time.sleep(random.randint(10,40))
+                    calculate(file)
+                    # t = threading.Thread(target = n_thread, args = (file,))
+                    # t.start()
+                    # t.join()
+                signal.alarm(0)
+            except Exception,e:
+                write_log(str(Exception)+":"+str(e)+str(e.args))
 
 def main():
     write_log("start..."+server_ip)
