@@ -17,6 +17,8 @@ import json
 json.encoder.FLOAT_REPR = lambda x: format(x, '.2f')
 import random
 import signal
+import logging
+
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_ip =  socket.inet_ntoa(fcntl.ioctl(
@@ -33,11 +35,24 @@ except:
         if not in_ip_re.match(ip):
             server_ip = ip
 
-def write_log(log):
-    print log
-    file = open("/usr/local/pzs/pzt/info.log","a")
-    file.write(log + "\n")
-    file.close()
+def init_log():
+    try:
+        os.rename("./logs/myapp.log.2","./logs/myapp.log.3")
+    except:
+        pass
+    try:
+        os.rename("./logs/myapp.log.1","./logs/myapp.log.2")
+    except:
+        pass
+    try:
+        os.rename("./logs/myapp.log","./logs/myapp.log.1")
+    except:
+        pass
+    logging.basicConfig(level=logging.INFO,
+        format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        filename='./logs/myapp.log',
+        filemode='w')
 
 def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
@@ -49,10 +64,10 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     for broker in kafka_addr:
         try:
             producer = KafkaProducer(bootstrap_servers=broker)
-            write_log("connected to broker: "+broker)
+            logging.info("connected to broker: "+broker)
             break
         except Exception,e:
-            write_log(str(Exception)+":"+str(e)+"\n broker: "+broker+" is not available")
+            logging.error(str(Exception)+":"+str(e))
     if producer is not None:
         if log_state==False:
             try:
@@ -72,7 +87,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
                 user_state=False
         producer.close()
     else:
-        write_log("no broker available")
+        logging.error("no broker available")
 
     return (log_state,user_state)
 
@@ -474,21 +489,21 @@ def calculate(file):
         log_state = res[0]
         user_state = res[1]
         if log_state and user_state:
-            write_log("Complete")
+            logging.info("Complete")
             break
         time.sleep(5)
     if retry_time == 0:
-        write_log("Error:Kafka error and retry failed")
+        logging.error("Kafka error and retry failed")
         os._exit(0)
 
 def handler(signum, frame):
-    write_log("Error: Log Timeout")
-    raise AssertionError
+    logging.error("Log Timeout")
+    os._exit(0)
 def n_thread(file):
     try:
         calculate(file)
     except Exception,e:
-        write_log(str(Exception)+":"+str(e)+str(e.args))
+        logging.error(str(Exception)+":"+str(e)+str(e.args))
 
 def monitor():
     dir = log_dir
@@ -504,7 +519,7 @@ def monitor():
                 signal.alarm(240)
                 file = dif.pop()
                 if re.compile(r"^access_.+log$").match(file):
-                    write_log(file)
+                    logging.info(file)
                     time.sleep(random.randint(10,40))
                     calculate(file)
                     # t = threading.Thread(target = n_thread, args = (file,))
@@ -512,13 +527,13 @@ def monitor():
                     # t.join()
                 signal.alarm(0)
             except Exception,e:
-                write_log(str(Exception)+":"+str(e)+str(e.args))
+                logging.error(str(Exception)+":"+str(e)+str(e.args))
 
 def main():
-    write_log("start..."+server_ip)
+    logging.info("start..."+server_ip)
     try:
         monitor()
     except:
-        write_log("Error:Init fail")
+        logging.error("Init fail")
 
 main()

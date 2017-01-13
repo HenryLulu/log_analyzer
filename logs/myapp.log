@@ -1,0 +1,7 @@
+2017-01-13 11:35:07 local_test_v2.py[line:579] INFO start
+2017-01-13 11:35:07 local_test_v2.py[line:581] INFO access_20170103122000.log
+2017-01-13 11:35:07 local_test_v2.py[line:593] ERROR <type 'exceptions.Exception'>:global name 'asdasd' is not defined
+2017-01-13 11:35:07 local_test_v2.py[line:581] INFO access_20170103160500.log
+2017-01-13 11:35:08 local_test_v2.py[line:593] ERROR <type 'exceptions.Exception'>:global name 'asdasd' is not defined
+2017-01-13 11:35:08 local_test_v2.py[line:581] INFO access_20170103164000.log
+2017-01-13 11:35:08 local_test_v2.py[line:593] ERROR <type 'exceptions.Exception'>:global name 'asdasd' is not defined

@@ -1,9 +1,9 @@
 log_type = 1
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
-# kafka_addr = ["n01.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
+kafka_addr = ["n01.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
-    log_dir = "/Users/henry/bsfiles"
+    log_dir = "/Users/henry/bsfiles/test"
 else:
     log_dir = "/Users/henry/bsfiles"
 
@@ -21,6 +21,8 @@ import json
 json.encoder.FLOAT_REPR = lambda x: format(x, '.2f')
 import random
 import signal
+import logging
+
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_ip =  socket.inet_ntoa(fcntl.ioctl(
@@ -37,27 +39,40 @@ except:
         if not in_ip_re.match(ip):
             server_ip = ip
 
-def write_log(log):
-    print log
-    file = open("./info.log","a")
-    file.write(log + "\n")
-    file.close()
+def init_log():
+    try:
+        os.rename("./logs/myapp.log.2","./logs/myapp.log.3")
+    except:
+        pass
+    try:
+        os.rename("./logs/myapp.log.1","./logs/myapp.log.2")
+    except:
+        pass
+    try:
+        os.rename("./logs/myapp.log","./logs/myapp.log.1")
+    except:
+        pass
+    logging.basicConfig(level=logging.INFO,
+        format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        filename='./logs/myapp.log',
+        filemode='w')
 
 def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
 def conn_kafka(user_list,log_info,log_state,user_state):
-    time.sleep(30)
     random.shuffle(kafka_addr)
     producer = None
     #find an available broker
     for broker in kafka_addr:
         try:
             producer = KafkaProducer(bootstrap_servers=broker)
-            write_log("connected to broker: "+broker)
+            logging.info("connected to broker: "+broker)
             break
         except Exception,e:
-            write_log(str(Exception)+":"+str(e)+"\n broker: "+broker+" is not available")
+            logging.error(str(Exception)+":"+str(e))
+            # logging.error("broker: "+broker+" is not available")
     if producer is not None:
         if log_state==False:
             try:
@@ -77,7 +92,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
                 user_state=False
         producer.close()
     else:
-        write_log("no broker available")
+        logging.error("no broker available")
 
     return (log_state,user_state)
 
@@ -483,23 +498,24 @@ def calculate(file):
         log_state = res[0]
         user_state = res[1]
         if log_state and user_state:
-            write_log("Complete")
+            logging.info("Complete")
             break
         time.sleep(5)
     if retry_time == 0:
-        write_log("Error:Kafka error and retry failed")
+        logging.error("Error:Kafka error and retry failed")
 
 
-    write_log(str(round(float(log_info['flu'])*8/300/1024,2)))
+    logging.info(str(round(float(log_info['flu'])*8/300/1024,2)))
 def handler(signum, frame):
-    write_log("log timeout")
-    raise AssertionError
+    logging.error("log timeout")
+    # raise AssertionError
+    os._exit(0)
 def n_thread(file):
-    write_log(file)
+    logging.info(file)
     try:
         calculate(file)
     except Exception,e:
-        write_log(str(Exception)+":"+str(e))
+        logging.error(str(Exception)+":"+str(e))
 
 def monitor():
     dir = "/data/proclog/log/pzs/back"
@@ -513,23 +529,26 @@ def monitor():
             try:
                 file = dif.pop()
                 if re.compile(r"^access_.+log$").match(file):
-                    write_log(file)
+                    logging.info(file)
                     try:
                         calculate(file)
                     except Exception,e:
-                        write_log(str(Exception)+":"+str(e))
+                        logging.error(str(Exception)+":"+str(e))
                     # t = threading.Thread(target = n_thread, args = (file,))
                     # t.start()
                     # t.join()
             except Exception,e:
-                write_log(str(Exception)+":"+str(e))
+                logging.error(str(Exception)+":"+str(e))
+            except AssertionError,a:
+                break
 
 def main():
-    write_log("start..."+server_ip)
+    init_log()
+    logging.info("start..."+server_ip)
     try:
         monitor()
     except:
-        write_log("Error:Init fail")
+        logging.error("Init fail")
 
 
 # file="access_20161206094500.log"
@@ -542,30 +561,34 @@ def main():
 # file="access_20161227100000.log"
 # file="access_20161229134500.log"
 files = [
-    "access_20170111234000.log",
-    # "access_20170103122000.log",
-    # "access_20170103160500.log",
-    # "access_20170103164000.log",
+    # "access_20170111234000.log",
+    "access_20170103122000.log",
+    "access_20170103160500.log",
+    "access_20170103164000.log",
     # "access_20170103164500.log",
     # "access_20170103165000.log",
 ]
+init_log()
 try:
     # client = KafkaClient(hosts=kafka_addr)
     # log_topic = client.topics['logs']
     # user_topic = client.topics['users']
     # log_pd = log_topic.get_sync_producer()
     # user_pd = user_topic.get_sync_producer()
-    write_log("start")
+    logging.info("start")
     for file in files:
-        write_log(file)
+        logging.info(file)
         try:
             signal.signal(signal.SIGALRM, handler)
             signal.alarm(10)
             calculate(file)
             signal.alarm(0)
+            # t = threading.Thread(target = n_thread, args = (file,))
+            # t.start()
+            # t.join()
         except Exception,e:
-            write_log(str(Exception)+":"+str(e))
+            logging.error(str(Exception)+":"+str(e))
 except Exception as e:
-    write_log(str(Exception)+":"+str(e)+str(e.args))
+    logging.error(str(Exception)+":"+str(e)+str(e.args))
 
 #/Users/henry/bsfiles/
