@@ -37,21 +37,21 @@ except:
 
 def init_log():
     try:
-        os.rename("./logs/myapp.log.2","./logs/myapp.log.3")
+        os.rename("./info_2.log","./info_3.log")
     except:
         pass
     try:
-        os.rename("./logs/myapp.log.1","./logs/myapp.log.2")
+        os.rename("./info_1.log","./info_2.log")
     except:
         pass
     try:
-        os.rename("./logs/myapp.log","./logs/myapp.log.1")
+        os.rename("./info.log","./info_1.log")
     except:
         pass
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        filename='./logs/myapp.log',
+        filename='./info.log',
         filemode='w')
 
 def ifjam(u):
