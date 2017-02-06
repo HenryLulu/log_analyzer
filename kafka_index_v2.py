@@ -349,7 +349,16 @@ def calculate(file):
                         "seg_t":l[5],
                         "seg_s":l[6],
                         "seg_e":l[6],
-                        "agent":l[8]
+                        "agent":l[8],
+                        "flu":l[9],
+                        "rate_n":{
+                            "1":0,
+                            "2":0,
+                            "3":0,
+                            "4":0
+                        },
+                        "channel_n":{},
+                        "type":category_name
                     }
 
                 if channel_list.has_key(l[3]):
@@ -360,12 +369,20 @@ def calculate(file):
                     total['channel_n'][l[3]] += l[9]
                 else:
                     total['channel_n'][l[3]] = l[9]
+                if user_list[l[0]]['channel_n'].has_key(l[3]):
+                    user_list[l[0]]['channel_n'][l[3]] += l[9]
+                else:
+                    user_list[l[0]]['channel_n'][l[3]] = l[9]
 
                 seg_mode_time = 4 if l[5] else 10
                 if rate_list.has_key(l[4]):
                     rate_list[l[4]] += seg_mode_time
                 else:
                     rate_list[l[4]] = seg_mode_time
+                if user_list[l[0]]['rate_n'].has_key(l[4]):
+                    user_list[l[0]]['rate_n'][l[4]] += seg_mode_time
+                else:
+                    user_list[l[0]]['rate_n'][l[4]] = seg_mode_time
 
                 if l[2]:
                     current_category['suc_n'] += 1
@@ -397,7 +414,16 @@ def calculate(file):
                         "end":l[1],
                         "agent":l[8],
                         "jam": l[6],
-                        "s_ip": server_ip
+                        "s_ip": server_ip,
+                        "flu":l[9],
+                        "rate_n":{
+                            "1":0,
+                            "2":0,
+                            "3":0,
+                            "4":0
+                        },
+                        "channel_n":{},
+                        "type":category_name
                     }
                 if channel_list.has_key(l[3]):
                     channel_list[l[3]] += l[9]
@@ -407,6 +433,10 @@ def calculate(file):
                     total['channel_n'][l[3]] += l[9]
                 else:
                     total['channel_n'][l[3]] = l[9]
+                if user_list[l[0]]['channel_n'].has_key(l[3]):
+                    user_list[l[0]]['channel_n'][l[3]] += l[9]
+                else:
+                    user_list[l[0]]['channel_n'][l[3]] = l[9]
 
                 lrms = long_rate_re.findall(l[4])
                 for lrm in lrms:
@@ -415,6 +445,10 @@ def calculate(file):
                         rate_list[k] += int(lrm[1])
                     else:
                         rate_list[k] = int(lrm[1])
+                    if user_list[l[0]]['rate_n'].has_key(k):
+                        user_list[l[0]]['rate_n'][k] += int(lrm[1])
+                    else:
+                        user_list[l[0]]['rate_n'][k] = int(lrm[1])
 
                 if l[2]:
                     current_category['suc_n'] += 1
