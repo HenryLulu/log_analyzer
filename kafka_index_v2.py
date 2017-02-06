@@ -530,6 +530,7 @@ def monitor():
                 logging.error(str(Exception)+":"+str(e)+str(e.args))
 
 def main():
+    init_log()
     logging.info("start..."+server_ip)
     try:
         monitor()
