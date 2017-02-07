@@ -39,6 +39,21 @@ except:
         if not in_ip_re.match(ip):
             server_ip = ip
 
+def send(file):
+
+    file = log_dir+'/'+file
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(('127.0.0.1', 9999))
+    print 'sending, please wait for a second ...'
+    with open(file, 'rb') as f:
+        data = f.read()
+        s.send(data)
+        # for data in f:
+        #     s.send(data)
+    print 'sended !'
+    s.close('end')
+    print ''
+
 def init_log():
     try:
         os.rename("./info_2.log","./info_3.log")
@@ -349,6 +364,7 @@ def calculate(file):
                         user_list[l[0]]["suc_n"] += 1
                 else:
                     user_list[l[0]] = {
+                        "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
                         "suc_n":1 if l[2] else 0,
@@ -415,6 +431,7 @@ def calculate(file):
                         user_list[l[0]]["suc_n"] += 1
                 else:
                     user_list[l[0]] = {
+                        "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
                         "suc_n":1 if l[2] else 0,
@@ -499,6 +516,7 @@ def calculate(file):
 
     user_list = total['user_list']
     log_info = top_list
+    log_info['from'] = log_type
     log_info['s_ip'] = server_ip
     log_info['start'] = starttm
     log_info['req_n'] = total['req_n']
@@ -614,10 +632,11 @@ try:
     for file in files:
         logging.info(file)
         try:
-            signal.signal(signal.SIGALRM, handler)
-            signal.alarm(10)
+            # signal.signal(signal.SIGALRM, handler)
+            # signal.alarm(10)
+            # send(file)
             calculate(file)
-            signal.alarm(0)
+            # signal.alarm(0)
             # t = threading.Thread(target = n_thread, args = (file,))
             # t.start()
             # t.join()

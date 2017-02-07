@@ -341,6 +341,7 @@ def calculate(file):
                         user_list[l[0]]["suc_n"] += 1
                 else:
                     user_list[l[0]] = {
+                        "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
                         "suc_n":1 if l[2] else 0,
@@ -407,6 +408,7 @@ def calculate(file):
                         user_list[l[0]]["suc_n"] += 1
                 else:
                     user_list[l[0]] = {
+                        "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
                         "suc_n":1 if l[2] else 0,
@@ -491,6 +493,7 @@ def calculate(file):
 
     user_list = total['user_list']
     log_info = top_list
+    log_info['from'] = log_type
     log_info['s_ip'] = server_ip
     log_info['start'] = starttm
     log_info['req_n'] = total['req_n']
