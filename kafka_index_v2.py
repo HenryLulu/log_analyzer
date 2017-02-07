@@ -249,37 +249,40 @@ def calculate(file):
                 agent = l.split('"')[1].decode("utf-8",'ignore')
             except:
                 continue
-            x_group = l.split(" ")
-            if len(x_group)<13:
-                continue
-            ip = x_group[1]
-            tim = int(x_group[0][0:10])
-            status = x_group[6]=="200" or x_group[6]=="206" or x_group[6]=="304"
-            flu = int(x_group[7])
+            try:
+                x_group = l.split(" ")
+                if len(x_group)<13:
+                    continue
+                ip = x_group[1]
+                tim = int(x_group[0][0:10])
+                status = x_group[6]=="200" or x_group[6]=="206" or x_group[6]=="304"
+                flu = int(x_group[7])
 
-            req_ma = req_re.match(x_group[11])
-            live_ma = live_re.match(x_group[11])
-            if req_ma:
-                channel = req_ma.group(1)
-                rate = str(int(req_ma.group(2))%5)
-                seg = req_ma.group(3)==u"1"
-                segnum = int(req_ma.group(4))
-                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
-                if seg:
-                    top_list['hds_1']['list'].append(r)
-                else:
-                    top_list['hls_0']['list'].append(r)
-            elif live_ma:
-                type = live_ma.group(2)
-                channel = live_ma.group(1)
-                rate = x_group[3]
-                try:
-                    live_jam = int(x_group[2])>0
-                except:
-                    live_jam = False
-                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
-                if top_list.has_key(type):
-                    top_list[type]['list'].append(r)
+                req_ma = req_re.match(x_group[11])
+                live_ma = live_re.match(x_group[11])
+                if req_ma:
+                    channel = req_ma.group(1)
+                    rate = str(int(req_ma.group(2))%5)
+                    seg = req_ma.group(3)==u"1"
+                    segnum = int(req_ma.group(4))
+                    r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
+                    if seg:
+                        top_list['hds_1']['list'].append(r)
+                    else:
+                        top_list['hls_0']['list'].append(r)
+                elif live_ma:
+                    type = live_ma.group(2)
+                    channel = live_ma.group(1)
+                    rate = x_group[3]
+                    try:
+                        live_jam = int(x_group[2])>0
+                    except:
+                        live_jam = False
+                    r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
+                    if top_list.has_key(type):
+                        top_list[type]['list'].append(r)
+            except:
+                pass
 
     #format log lines(Dilian CDN)
     else:
@@ -296,34 +299,37 @@ def calculate(file):
                 agent = x_group[16].decode("utf-8",'ignore')
             except:
                 continue
-            ip = x_group[0]
-            tim = int(x_group[1][0:10])
-            status = x_group[4]=="200" or x_group[4]=="206" or x_group[4]=="304"
-            flu = int(x_group[6])
+            try:
+                ip = x_group[0]
+                tim = int(x_group[1][0:10])
+                status = x_group[4]=="200" or x_group[4]=="206" or x_group[4]=="304"
+                flu = int(x_group[6])
 
-            req_ma = req_re.match(x_group[8])
-            live_ma = live_re.match(x_group[8])
-            if req_ma:
-                channel = req_ma.group(1)
-                rate = str(int(req_ma.group(2))%5)
-                seg = req_ma.group(3)==u"1"
-                segnum = int(req_ma.group(4))
-                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
-                if seg:
-                    top_list['hds_1']['list'].append(r)
-                else:
-                    top_list['hls_0']['list'].append(r)
-            elif live_ma:
-                type = live_ma.group(2)
-                channel = live_ma.group(1)
-                rate = x_group[35].replace("\r\n","")
-                try:
-                    live_jam = int(x_group[34])>0
-                except:
-                    live_jam = False
-                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
-                if top_list.has_key(type):
-                    top_list[type]['list'].append(r)
+                req_ma = req_re.match(x_group[8])
+                live_ma = live_re.match(x_group[8])
+                if req_ma:
+                    channel = req_ma.group(1)
+                    rate = str(int(req_ma.group(2))%5)
+                    seg = req_ma.group(3)==u"1"
+                    segnum = int(req_ma.group(4))
+                    r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
+                    if seg:
+                        top_list['hds_1']['list'].append(r)
+                    else:
+                        top_list['hls_0']['list'].append(r)
+                elif live_ma:
+                    type = live_ma.group(2)
+                    channel = live_ma.group(1)
+                    rate = x_group[35].replace("\r\n","")
+                    try:
+                        live_jam = int(x_group[34])>0
+                    except:
+                        live_jam = False
+                    r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
+                    if top_list.has_key(type):
+                        top_list[type]['list'].append(r)
+            except:
+                pass
 
     for category_name in top_list:
         current_category = top_list[category_name]
