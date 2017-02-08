@@ -1,9 +1,11 @@
-log_type = 1
+log_type = 3
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
     log_dir = "/data/proclog/log/pzs/back"
-else:
+elif log_type ==2:
     log_dir = "/data/proclog/logback"
+else:
+    log_dir = "/usr/local/pzs/pzlogbak"
 
 from kafka import KafkaProducer
 import re
@@ -34,24 +36,25 @@ except:
         ip = ip.replace("\n","")
         if not in_ip_re.match(ip):
             server_ip = ip
+            break
 
 def init_log():
     try:
-        os.rename("./info_2.log","./info_3.log")
+        os.rename("/usr/local/pzs/pzt/info_2.log","/usr/local/pzs/pzt/info_3.log")
     except:
         pass
     try:
-        os.rename("./info_1.log","./info_2.log")
+        os.rename("/usr/local/pzs/pzt/info_1.log","/usr/local/pzs/pzt/info_2.log")
     except:
         pass
     try:
-        os.rename("./info.log","./info_1.log")
+        os.rename("/usr/local/pzs/pzt/info.log","/usr/local/pzs/pzt/info_1.log")
     except:
         pass
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        filename='./info.log',
+        filename='/usr/local/pzs/pzt/info.log',
         filemode='w')
 
 def ifjam(u):
@@ -243,7 +246,7 @@ def calculate(file):
     }
 
     #format log lines(normal CDN)
-    if log_type==1:
+    if log_type!=2:
         for l in logs:
             try:
                 agent = l.split('"')[1].decode("utf-8",'ignore')

@@ -564,6 +564,7 @@ def calculate(file):
 
 
     logging.info(str(round(float(log_info['flu'])*8/300/1024,2)))
+    logging.info(log_info_json)
     logging.info(user_list_json)
 def handler(signum, frame):
     logging.error("log timeout")
