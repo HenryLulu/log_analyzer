@@ -1,4 +1,9 @@
-log_type = 3
+log_type = 1
+code_version = "ICSAgent V1.0"
+code_build = "2017021401"
+log_duration = 300  #s
+code_name = "local_index.py"
+
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
     log_dir = "/data/proclog/log/pzs/back"
@@ -20,6 +25,15 @@ json.encoder.FLOAT_REPR = lambda x: format(x, '.2f')
 import random
 import signal
 import logging
+try:
+    from hashlib import md5
+    m = md5()
+    a_file = open(code_name, 'rb')
+    m.update(a_file.read())
+    a_file.close()
+    md5_str = m.hexdigest()
+except:
+    md5_str = "unknow"
 
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -475,7 +489,7 @@ def calculate(file):
             current_category['suc_r'] = round(float(current_category['suc_n']*100)/current_category['req_n'],2)
         if len(user_list)!=0:
             current_category['freeze_r'] = round(float(current_category['jam_n']*100)/len(user_list),2)
-        current_category['band'] = round(float(current_category['flu'])*8/300/1024,2)
+        current_category['band'] = round(float(current_category['flu'])*8/300/1000,2)
         try:
             current_category['bitrate'] = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
         except:
@@ -503,6 +517,9 @@ def calculate(file):
     user_list = total['user_list']
     log_info = top_list
     log_info['from'] = log_type
+    log_info['version'] = code_version+' '+code_build
+    log_info['duration'] = log_duration
+    log_info['md5'] = md5_str
     log_info['s_ip'] = server_ip
     log_info['start'] = starttm
     log_info['req_n'] = total['req_n']
@@ -568,9 +585,6 @@ def monitor():
                     logging.info(file)
                     time.sleep(random.randint(10,40))
                     calculate(file)
-                    # t = threading.Thread(target = n_thread, args = (file,))
-                    # t.start()
-                    # t.join()
                 signal.alarm(0)
             except Exception,e:
                 logging.error(str(Exception)+":"+str(e)+str(e.args))
