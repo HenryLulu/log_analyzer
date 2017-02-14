@@ -1,11 +1,11 @@
-log_type = 1
+log_type = 3
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 kafka_addr = ["n01.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
     log_dir = "/Users/henry/bsfiles/test"
 else:
-    log_dir = "/Users/henry/bsfiles"
+    log_dir = "/Users/henry/bsfiles/dl"
 
 from pymongo import *
 # from pykafka import KafkaClient
@@ -564,8 +564,6 @@ def calculate(file):
 
 
     logging.info(str(round(float(log_info['flu'])*8/300/1024,2)))
-    logging.info(log_info_json)
-    logging.info(user_list_json)
 def handler(signum, frame):
     logging.error("log timeout")
     # raise AssertionError
@@ -610,47 +608,42 @@ def main():
     except:
         logging.error("Init fail")
 
+def test():
+    files = [
+        # "access_20170111234000.log",
+        # "access_20170103122000.log",
+        # "access_20170103160500.log",
+        "access_20170209122500.log",
+        # "access_20170103164000.log",
+        # "access_20170103164500.log",
+        # "access_20170103165000.log",
+    ]
+    init_log()
+    try:
+        # client = KafkaClient(hosts=kafka_addr)
+        # log_topic = client.topics['logs']
+        # user_topic = client.topics['users']
+        # log_pd = log_topic.get_sync_producer()
+        # user_pd = user_topic.get_sync_producer()
+        logging.info("start")
+        for file in files:
+            logging.info(file)
+            try:
+                # signal.signal(signal.SIGALRM, handler)
+                # signal.alarm(10)
+                # send(file)
+                calculate(file)
+                # signal.alarm(0)
+                # t = threading.Thread(target = n_thread, args = (file,))
+                # t.start()
+                # t.join()
+            except Exception,e:
+                logging.error(str(Exception)+":"+str(e))
+    except Exception as e:
+        logging.error(str(Exception)+":"+str(e)+str(e.args))
 
-# file="access_20161206094500.log"
-# file="access_20161209110000.log"
-# file = "access_20161206095000.log"
-# file="access_20161221103500.log"
-# file="access_20161222095000.log"
-# file="access_20161222155000.log"
-# file="access_20161222163000.log"
-# file="access_20161227100000.log"
-# file="access_20161229134500.log"
-files = [
-    # "access_20170111234000.log",
-    # "access_20170103122000.log",
-    # "access_20170103160500.log",
-    "access_20170124195500.log",
-    # "access_20170103164000.log",
-    # "access_20170103164500.log",
-    # "access_20170103165000.log",
-]
-init_log()
-try:
-    # client = KafkaClient(hosts=kafka_addr)
-    # log_topic = client.topics['logs']
-    # user_topic = client.topics['users']
-    # log_pd = log_topic.get_sync_producer()
-    # user_pd = user_topic.get_sync_producer()
-    logging.info("start")
-    for file in files:
-        logging.info(file)
-        try:
-            # signal.signal(signal.SIGALRM, handler)
-            # signal.alarm(10)
-            # send(file)
-            calculate(file)
-            # signal.alarm(0)
-            # t = threading.Thread(target = n_thread, args = (file,))
-            # t.start()
-            # t.join()
-        except Exception,e:
-            logging.error(str(Exception)+":"+str(e))
-except Exception as e:
-    logging.error(str(Exception)+":"+str(e)+str(e.args))
+print __name__
+if __name__ == '__main__':
+    test()
 
 #/Users/henry/bsfiles/
