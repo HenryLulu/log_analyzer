@@ -1,11 +1,15 @@
-log_type = 3
+log_type = 4
 mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 kafka_addr = ["n01.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
-    log_dir = "/Users/henry/bsfiles/test"
-else:
+    log_dir = "/Users/henry/bsfiles/kw"
+elif log_type ==2:
     log_dir = "/Users/henry/bsfiles/dl"
+elif log_type ==3:
+    log_dir = "/Users/henry/bsfiles/ws"
+elif log_type ==4:
+    log_dir = "/Users/henry/bsfiles/pbs"
 
 from pymongo import *
 # from pykafka import KafkaClient
@@ -613,7 +617,7 @@ def test():
         # "access_20170111234000.log",
         # "access_20170103122000.log",
         # "access_20170103160500.log",
-        "access_20170209122500.log",
+        "access_20170216140500.log",
         # "access_20170103164000.log",
         # "access_20170103164500.log",
         # "access_20170103165000.log",

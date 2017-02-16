@@ -2,7 +2,7 @@ log_type = 1
 code_version = "ICSAgent V1.0"
 code_build = "2017021401"
 log_duration = 300  #s
-code_name = "local_index.py"
+code_name = "./local_index.py"
 
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 if log_type ==1:
@@ -260,7 +260,7 @@ def calculate(file):
     }
 
     #format log lines(normal CDN)
-    if log_type!=2:
+    if log_type==1 or log_type==3:
         for l in logs:
             try:
                 agent = l.split('"')[1].decode("utf-8",'ignore')
