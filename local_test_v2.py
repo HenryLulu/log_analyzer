@@ -1,23 +1,17 @@
-log_type = 4
-mongo_addr = "mongodb://n0.g1.pzt.powzamedia.com:27017,n1.g1.pzt.powzamedia.com:27017,n2.g1.pzt.powzamedia.com:27017"
-kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
-kafka_addr = ["n01.g1.pzt.powzamedia.com:9092","n11.g1.pzt.powzamedia.com:9092","n21.g1.pzt.powzamedia.com:9092"]
-if log_type ==1:
-    log_dir = "/Users/henry/bsfiles/kw"
-elif log_type ==2:
-    log_dir = "/Users/henry/bsfiles/dl"
-elif log_type ==3:
-    log_dir = "/Users/henry/bsfiles/ws"
-elif log_type ==4:
-    log_dir = "/Users/henry/bsfiles/pbs"
+log_type = 1
+code_version = "ICSAgent V1.0"
+code_build = "2017021401"
+log_duration = 60  #s
+code_name = "./local_index.py"
 
-from pymongo import *
-# from pykafka import KafkaClient
+kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
+log_dir = "/usr/local/pzs/pzlogbak"
+
 from kafka import KafkaProducer
+from multiprocessing import Process
 import re
 import os
 import time
-import threading
 import socket
 import fcntl
 import struct
@@ -26,6 +20,17 @@ json.encoder.FLOAT_REPR = lambda x: format(x, '.2f')
 import random
 import signal
 import logging
+
+#init public vars
+try:
+    from hashlib import md5
+    m = md5()
+    a_file = open(code_name, 'rb')
+    m.update(a_file.read())
+    a_file.close()
+    md5_str = m.hexdigest()
+except:
+    md5_str = "unknow"
 
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -42,39 +47,27 @@ except:
         ip = ip.replace("\n","")
         if not in_ip_re.match(ip):
             server_ip = ip
-
-def send(file):
-
-    file = log_dir+'/'+file
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(('127.0.0.1', 9999))
-    print 'sending, please wait for a second ...'
-    with open(file, 'rb') as f:
-        data = f.read()
-        s.send(data)
-        # for data in f:
-        #     s.send(data)
-    print 'sended !'
-    s.close('end')
-    print ''
+            break
+class TimeOutException(Exception):
+    pass
 
 def init_log():
     try:
-        os.rename("./info_2.log","./info_3.log")
+        os.rename("/usr/local/pzs/pzt/info_2.log","/usr/local/pzs/pzt/info_3.log")
     except:
         pass
     try:
-        os.rename("./info_1.log","./info_2.log")
+        os.rename("/usr/local/pzs/pzt/info_1.log","/usr/local/pzs/pzt/info_2.log")
     except:
         pass
     try:
-        os.rename("./info.log","./info_1.log")
+        os.rename("/usr/local/pzs/pzt/info.log","/usr/local/pzs/pzt/info_1.log")
     except:
         pass
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        filename='./info.log',
+        filename='/usr/local/pzs/pzt/info.log',
         filemode='w')
 
 def ifjam(u):
@@ -91,7 +84,6 @@ def conn_kafka(user_list,log_info,log_state,user_state):
             break
         except Exception,e:
             logging.error(str(Exception)+":"+str(e))
-            # logging.error("broker: "+broker+" is not available")
     if producer is not None:
         if log_state==False:
             try:
@@ -116,15 +108,14 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     return (log_state,user_state)
 
 def calculate(file):
-    req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
-    live_re = re.compile(r"^http://(\w+)\..+/live/(ld/flv|ld/trans|flv|trans)/")
-    m3u8_re = re.compile(r"^http.+index\.(m3u8|bootstrap)")
+
+#define reg
+    req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
+    live_re = re.compile(r"^(.+)/live/(ld/flv|ld/trans|flv|trans)/")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
     logs = open(log_dir+"/"+file,'r').readlines()
-    # log_list = []
-    # live_list = []
-    # m3u8_list = []
-    # num = 0
+
+#init top_list
     top_list = {
         'hls_0' : {
             'type' : 1,
@@ -269,95 +260,48 @@ def calculate(file):
         'channel_n':{}
     }
 
-    #format log lines(normal CDN)
-    if log_type==1:
-        for l in logs:
-            try:
-                agent = l.split('"')[1].decode("utf-8",'ignore')
-            except:
+#format logs
+    for l in logs:
+        try:
+            agent = l.split('"')[1].decode("utf-8",'ignore')
+        except:
+            continue
+        try:
+            x_group = l.split(" ")
+            # 0Begin_Time, 1User_IP, 2ResponseCode, 3Flu, 4Duration, 5Freeze_Count, 6Bitrate, 7Domain, 8Port, 9URI, 10UserAgent
+            if len(x_group)<11:
                 continue
-            try:
-                x_group = l.split(" ")
-                if len(x_group)<13:
-                    continue
-                ip = x_group[1]
-                tim = int(x_group[0][0:10])
-                status = x_group[6]=="200" or x_group[6]=="206" or x_group[6]=="304"
-                flu = int(x_group[7])
+            ip = x_group[1]
+            tim = int(x_group[0])
+            status = x_group[2]=="200" or x_group[6]=="206" or x_group[6]=="304"
+            flu = int(x_group[3])
+            channel = x_group[7].split(".")[0]
 
-                req_ma = req_re.match(x_group[11])
-                live_ma = live_re.match(x_group[11])
-                if req_ma:
-                    channel = req_ma.group(1)
-                    rate = str(int(req_ma.group(2))%5)
-                    seg = req_ma.group(3)==u"1"
-                    segnum = int(req_ma.group(4))
-                    r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
-                    if seg:
-                        top_list['hds_1']['list'].append(r)
-                    else:
-                        top_list['hls_0']['list'].append(r)
-                elif live_ma:
-                    type = live_ma.group(2)
-                    channel = live_ma.group(1)
-                    rate = x_group[3]
-                    try:
-                        live_jam = int(x_group[2])>0
-                    except:
-                        live_jam = False
-                    r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
-                    if top_list.has_key(type):
-                        top_list[type]['list'].append(r)
-            except:
-                pass
+            req_ma = req_re.match(x_group[9])
+            live_ma = live_re.match(x_group[9])
+            if req_ma:
+                rate = str(int(req_ma.group(2))%5)
+                seg = req_ma.group(3)==u"1"
+                segnum = int(req_ma.group(4))
+                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
+                if seg:
+                    top_list['hds_1']['list'].append(r)
+                else:
+                    top_list['hls_0']['list'].append(r)
+            elif live_ma:
+                type = live_ma.group(2)
+                rate = x_group[6]
+                try:
+                    live_jam = int(x_group[5])>0
+                except:
+                    live_jam = False
+                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
+                if top_list.has_key(type):
+                    top_list[type]['list'].append(r)
+        except:
+            pass
 
-    #format log lines(Dilian CDN)
-    else:
-        for l in logs:
-            x_group = l.split("\t")
-            # try:
-            #     agent = l.split('"')[1].decode("utf-8",'ignore')
-            # except:
-            #     continue
-            # x_group = l.split(" ")
-            if len(x_group)<36:
-                continue
-            try:
-                agent = x_group[16].decode("utf-8",'ignore')
-            except:
-                continue
-            try:
-                ip = x_group[0]
-                tim = int(x_group[1][0:10])
-                status = x_group[4]=="200" or x_group[4]=="206" or x_group[4]=="304"
-                flu = int(x_group[6])
-
-                req_ma = req_re.match(x_group[8])
-                live_ma = live_re.match(x_group[8])
-                if req_ma:
-                    channel = req_ma.group(1)
-                    rate = str(int(req_ma.group(2))%5)
-                    seg = req_ma.group(3)==u"1"
-                    segnum = int(req_ma.group(4))
-                    r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
-                    if seg:
-                        top_list['hds_1']['list'].append(r)
-                    else:
-                        top_list['hls_0']['list'].append(r)
-                elif live_ma:
-                    type = live_ma.group(2)
-                    channel = live_ma.group(1)
-                    rate = x_group[35].replace("\r\n","")
-                    try:
-                        live_jam = int(x_group[34])>0
-                    except:
-                        live_jam = False
-                    r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
-                    if top_list.has_key(type):
-                        top_list[type]['list'].append(r)
-            except:
-                pass
-
+#analyze top_list
     for category_name in top_list:
         current_category = top_list[category_name]
         log_list = current_category['list']
@@ -499,7 +443,7 @@ def calculate(file):
             current_category['suc_r'] = round(float(current_category['suc_n']*100)/current_category['req_n'],2)
         if len(user_list)!=0:
             current_category['freeze_r'] = round(float(current_category['jam_n']*100)/len(user_list),2)
-        current_category['band'] = round(float(current_category['flu'])*8/300/1024,2)
+        current_category['band'] = round(float(current_category['flu'])*8/300/1000,2)
         try:
             current_category['bitrate'] = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
         except:
@@ -521,12 +465,16 @@ def calculate(file):
         del current_category['list']
         del current_category['users']
 
+#add total keys
     start = file[7:21]
     starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
 
     user_list = total['user_list']
     log_info = top_list
     log_info['from'] = log_type
+    log_info['version'] = code_version+' '+code_build
+    log_info['duration'] = log_duration
+    log_info['md5'] = md5_str
     log_info['s_ip'] = server_ip
     log_info['start'] = starttm
     log_info['req_n'] = total['req_n']
@@ -546,63 +494,61 @@ def calculate(file):
         log_info['bitrate'] = 0
     log_info['channel_n'] = total['channel_n']
 
+#send to kafka
     user_list_json = json.JSONEncoder().encode(user_list)
     log_info_json = json.JSONEncoder().encode(log_info)
 
-    #write into kafka
-    # time.sleep(random.randint(0,30))
-    # retry_time = 10
-    # log_state = False
-    # user_state = False
-    # while retry_time>0:
-    #     retry_time -= 1
-    #     res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
-    #     log_state = res[0]
-    #     user_state = res[1]
-    #     if log_state and user_state:
-    #         logging.info("Complete")
-    #         break
-    #     time.sleep(5)
-    # if retry_time == 0:
-    #     logging.error("Error:Kafka error and retry failed")
+    retry_time = 10
+    log_state = False
+    user_state = False
+    while retry_time>0:
+        retry_time -= 1
+        res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
+        log_state = res[0]
+        user_state = res[1]
+        if log_state and user_state:
+            logging.info("Complete")
+            break
+        time.sleep(5)
+    if retry_time == 0:
+        logging.error("Kafka error and retry failed")
+        raise TimeOutException()
 
+    #func end
 
-    logging.info(str(round(float(log_info['flu'])*8/300/1024,2)))
 def handler(signum, frame):
-    logging.error("log timeout")
-    # raise AssertionError
-    os._exit(0)
-def n_thread(file):
+    logging.error("Log Timeout")
+    raise TimeOutException()
+
+def new_progress(file):
     logging.info(file)
-    try:
-        calculate(file)
-    except Exception,e:
-        logging.error(str(Exception)+":"+str(e))
+
+    p = Process(target=calculate, args=(file,))
+    time.sleep(random.randint(0,10))
+    p.start()
+    p.join()
 
 def monitor():
-    dir = "/data/proclog/log/pzs/back"
+    dir = log_dir
     origin = set([_f[2] for _f in os.walk(dir)][0])
     while True:
         time.sleep(5)
         final = set([_f[2] for _f in os.walk(dir)][0])
         dif = final.difference(origin)
         origin = final
-        while len(dif) > 0:     #change to while
+        while len(dif) > 0:
             try:
+                signal.signal(signal.SIGALRM, handler)
+                signal.alarm(log_duration-5)
                 file = dif.pop()
-                if re.compile(r"^access_.+log$").match(file):
-                    logging.info(file)
-                    try:
-                        calculate(file)
-                    except Exception,e:
-                        logging.error(str(Exception)+":"+str(e))
-                    # t = threading.Thread(target = n_thread, args = (file,))
-                    # t.start()
-                    # t.join()
+                if re.compile(r"^access_.+ori$").match(file):
+                    new_progress(file)
+                signal.alarm(0)
+            except TimeOutException, e:
+                logging.error("timeout error")
+                pass
             except Exception,e:
-                logging.error(str(Exception)+":"+str(e))
-            except AssertionError,a:
-                break
+                logging.error(str(Exception)+":"+str(e)+str(e.args))
 
 def main():
     init_log()
@@ -612,42 +558,4 @@ def main():
     except:
         logging.error("Init fail")
 
-def test():
-    files = [
-        # "access_20170111234000.log",
-        # "access_20170103122000.log",
-        # "access_20170103160500.log",
-        "access_20170216140500.log",
-        # "access_20170103164000.log",
-        # "access_20170103164500.log",
-        # "access_20170103165000.log",
-    ]
-    init_log()
-    try:
-        # client = KafkaClient(hosts=kafka_addr)
-        # log_topic = client.topics['logs']
-        # user_topic = client.topics['users']
-        # log_pd = log_topic.get_sync_producer()
-        # user_pd = user_topic.get_sync_producer()
-        logging.info("start")
-        for file in files:
-            logging.info(file)
-            try:
-                # signal.signal(signal.SIGALRM, handler)
-                # signal.alarm(10)
-                # send(file)
-                calculate(file)
-                # signal.alarm(0)
-                # t = threading.Thread(target = n_thread, args = (file,))
-                # t.start()
-                # t.join()
-            except Exception,e:
-                logging.error(str(Exception)+":"+str(e))
-    except Exception as e:
-        logging.error(str(Exception)+":"+str(e)+str(e.args))
-
-print __name__
-if __name__ == '__main__':
-    test()
-
-#/Users/henry/bsfiles/
+main()
