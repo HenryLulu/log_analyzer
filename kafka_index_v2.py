@@ -1,22 +1,16 @@
 log_type = 1
 code_version = "ICSAgent V1.0"
 code_build = "2017021401"
-log_duration = 300  #s
+log_duration = 60  #s
 code_name = "./local_index.py"
 
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
-if log_type ==1:
-    log_dir = "/data/proclog/log/pzs/back"
-elif log_type ==2:
-    log_dir = "/data/proclog/logback"
-else:
-    log_dir = "/usr/local/pzs/pzlogbak"
+log_dir = "/usr/local/pzs/pzlogbak"
 
 from kafka import KafkaProducer
 import re
 import os
 import time
-import threading
 import socket
 import fcntl
 import struct
@@ -109,12 +103,14 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     return (log_state,user_state)
 
 def calculate(file):
-    req_re = re.compile(r"^http://(\w+)\..+(\d)_/seg(\d).+(\d{9})")
-    live_re = re.compile(r"^http://(\w+)\..+/live/(ld/flv|ld/trans|flv|trans)/")
-    m3u8_re = re.compile(r"^http.+index\.(m3u8|bootstrap)")
+
+#define reg
+    req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
+    live_re = re.compile(r"^(.+)/live/(ld/flv|ld/trans|flv|trans)/")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
     logs = open(log_dir+"/"+file,'r').readlines()
 
+#init top_list
     top_list = {
         'hls_0' : {
             'type' : 1,
@@ -259,95 +255,48 @@ def calculate(file):
         'channel_n':{}
     }
 
-    #format log lines(normal CDN)
-    if log_type==1 or log_type==3:
-        for l in logs:
-            try:
-                agent = l.split('"')[1].decode("utf-8",'ignore')
-            except:
+#format logs
+    for l in logs:
+        try:
+            agent = l.split('"')[1].decode("utf-8",'ignore')
+        except:
+            continue
+        try:
+            x_group = l.split(" ")
+            # 0Begin_Time, 1User_IP, 2ResponseCode, 3Flu, 4Duration, 5Freeze_Count, 6Bitrate, 7Domain, 8Port, 9URI, 10UserAgent
+            if len(x_group)<11:
                 continue
-            try:
-                x_group = l.split(" ")
-                if len(x_group)<13:
-                    continue
-                ip = x_group[1]
-                tim = int(x_group[0][0:10])
-                status = x_group[6]=="200" or x_group[6]=="206" or x_group[6]=="304"
-                flu = int(x_group[7])
+            ip = x_group[1]
+            tim = int(x_group[0])
+            status = x_group[2]=="200" or x_group[6]=="206" or x_group[6]=="304"
+            flu = int(x_group[3])
+            channel = x_group[7].split(".")[0]
 
-                req_ma = req_re.match(x_group[11])
-                live_ma = live_re.match(x_group[11])
-                if req_ma:
-                    channel = req_ma.group(1)
-                    rate = str(int(req_ma.group(2))%5)
-                    seg = req_ma.group(3)==u"1"
-                    segnum = int(req_ma.group(4))
-                    r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
-                    if seg:
-                        top_list['hds_1']['list'].append(r)
-                    else:
-                        top_list['hls_0']['list'].append(r)
-                elif live_ma:
-                    type = live_ma.group(2)
-                    channel = live_ma.group(1)
-                    rate = x_group[3]
-                    try:
-                        live_jam = int(x_group[2])>0
-                    except:
-                        live_jam = False
-                    r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
-                    if top_list.has_key(type):
-                        top_list[type]['list'].append(r)
-            except:
-                pass
+            req_ma = req_re.match(x_group[9])
+            live_ma = live_re.match(x_group[9])
+            if req_ma:
+                rate = str(int(req_ma.group(2))%5)
+                seg = req_ma.group(3)==u"1"
+                segnum = int(req_ma.group(4))
+                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
+                if seg:
+                    top_list['hds_1']['list'].append(r)
+                else:
+                    top_list['hls_0']['list'].append(r)
+            elif live_ma:
+                type = live_ma.group(2)
+                rate = x_group[6]
+                try:
+                    live_jam = int(x_group[5])>0
+                except:
+                    live_jam = False
+                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
+                if top_list.has_key(type):
+                    top_list[type]['list'].append(r)
+        except:
+            pass
 
-    #format log lines(Dilian CDN)
-    else:
-        for l in logs:
-            x_group = l.split("\t")
-            # try:
-            #     agent = l.split('"')[1].decode("utf-8",'ignore')
-            # except:
-            #     continue
-            # x_group = l.split(" ")
-            if len(x_group)<36:
-                continue
-            try:
-                agent = x_group[16].decode("utf-8",'ignore')
-            except:
-                continue
-            try:
-                ip = x_group[0]
-                tim = int(x_group[1][0:10])
-                status = x_group[4]=="200" or x_group[4]=="206" or x_group[4]=="304"
-                flu = int(x_group[6])
-
-                req_ma = req_re.match(x_group[8])
-                live_ma = live_re.match(x_group[8])
-                if req_ma:
-                    channel = req_ma.group(1)
-                    rate = str(int(req_ma.group(2))%5)
-                    seg = req_ma.group(3)==u"1"
-                    segnum = int(req_ma.group(4))
-                    r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
-                    if seg:
-                        top_list['hds_1']['list'].append(r)
-                    else:
-                        top_list['hls_0']['list'].append(r)
-                elif live_ma:
-                    type = live_ma.group(2)
-                    channel = live_ma.group(1)
-                    rate = x_group[35].replace("\r\n","")
-                    try:
-                        live_jam = int(x_group[34])>0
-                    except:
-                        live_jam = False
-                    r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
-                    if top_list.has_key(type):
-                        top_list[type]['list'].append(r)
-            except:
-                pass
-
+#analyze top_list
     for category_name in top_list:
         current_category = top_list[category_name]
         log_list = current_category['list']
@@ -511,6 +460,7 @@ def calculate(file):
         del current_category['list']
         del current_category['users']
 
+#add total keys
     start = file[7:21]
     starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
 
@@ -539,10 +489,10 @@ def calculate(file):
         log_info['bitrate'] = 0
     log_info['channel_n'] = total['channel_n']
 
+#send to kafka
     user_list_json = json.JSONEncoder().encode(user_list)
     log_info_json = json.JSONEncoder().encode(log_info)
 
-    #write into kafka
     retry_time = 10
     log_state = False
     user_state = False
@@ -559,14 +509,11 @@ def calculate(file):
         logging.error("Kafka error and retry failed")
         os._exit(0)
 
+    #func end
+
 def handler(signum, frame):
     logging.error("Log Timeout")
     os._exit(0)
-def n_thread(file):
-    try:
-        calculate(file)
-    except Exception,e:
-        logging.error(str(Exception)+":"+str(e)+str(e.args))
 
 def monitor():
     dir = log_dir
@@ -579,11 +526,11 @@ def monitor():
         while len(dif) > 0:
             try:
                 signal.signal(signal.SIGALRM, handler)
-                signal.alarm(240)
+                signal.alarm(log_duration-5)
                 file = dif.pop()
                 if re.compile(r"^access_.+log$").match(file):
                     logging.info(file)
-                    time.sleep(random.randint(10,40))
+                    time.sleep(random.randint(0,10))
                     calculate(file)
                 signal.alarm(0)
             except Exception,e:
