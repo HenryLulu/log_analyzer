@@ -8,6 +8,7 @@ kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n
 log_dir = "/usr/local/pzs/pzlogbak"
 
 from kafka import KafkaProducer
+
 import re
 import os
 import time
@@ -19,6 +20,8 @@ json.encoder.FLOAT_REPR = lambda x: format(x, '.2f')
 import random
 import signal
 import logging
+
+#init public vars
 try:
     from hashlib import md5
     m = md5()
@@ -528,7 +531,7 @@ def monitor():
                 signal.signal(signal.SIGALRM, handler)
                 signal.alarm(log_duration-5)
                 file = dif.pop()
-                if re.compile(r"^access_.+log$").match(file):
+                if re.compile(r"^access_.+ori$").match(file):
                     logging.info(file)
                     time.sleep(random.randint(0,10))
                     calculate(file)
