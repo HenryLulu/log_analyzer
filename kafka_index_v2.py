@@ -8,7 +8,7 @@ kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n
 log_dir = "/usr/local/pzs/pzlogbak"
 
 from kafka import KafkaProducer
-
+from multiprocessing import Process
 import re
 import os
 import time
@@ -48,6 +48,8 @@ except:
         if not in_ip_re.match(ip):
             server_ip = ip
             break
+class TimeOutException(Exception):
+    pass
 
 def init_log():
     try:
@@ -510,13 +512,21 @@ def calculate(file):
         time.sleep(5)
     if retry_time == 0:
         logging.error("Kafka error and retry failed")
-        os._exit(0)
+        raise TimeOutException()
 
     #func end
 
 def handler(signum, frame):
     logging.error("Log Timeout")
-    os._exit(0)
+    raise TimeOutException()
+
+def new_progress(file):
+    logging.info(file)
+
+    p = Process(target=calculate, args=(file,))
+    time.sleep(random.randint(0,10))
+    p.start()
+    p.join()
 
 def monitor():
     dir = log_dir
@@ -532,10 +542,11 @@ def monitor():
                 signal.alarm(log_duration-5)
                 file = dif.pop()
                 if re.compile(r"^access_.+ori$").match(file):
-                    logging.info(file)
-                    time.sleep(random.randint(0,10))
-                    calculate(file)
+                    new_progress(file)
                 signal.alarm(0)
+            except TimeOutException, e:
+                logging.error("timeout error")
+                pass
             except Exception,e:
                 logging.error(str(Exception)+":"+str(e)+str(e.args))
 
