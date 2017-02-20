@@ -5,7 +5,7 @@ log_duration = 60  #s
 code_name = "./local_index.py"
 
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
-log_dir = "/usr/local/pzs/pzlogbak"
+log_dir = "/Users/henry/bsfiles"
 
 from kafka import KafkaProducer
 from multiprocessing import Process
@@ -53,21 +53,21 @@ class TimeOutException(Exception):
 
 def init_log():
     try:
-        os.rename("/usr/local/pzs/pzt/info_2.log","/usr/local/pzs/pzt/info_3.log")
+        os.rename("info_2.log","info_3.log")
     except:
         pass
     try:
-        os.rename("/usr/local/pzs/pzt/info_1.log","/usr/local/pzs/pzt/info_2.log")
+        os.rename("info_1.log","info_2.log")
     except:
         pass
     try:
-        os.rename("/usr/local/pzs/pzt/info.log","/usr/local/pzs/pzt/info_1.log")
+        os.rename("info.log","info_1.log")
     except:
         pass
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        filename='/usr/local/pzs/pzt/info.log',
+        filename='info.log',
         filemode='w')
 
 def ifjam(u):
@@ -108,6 +108,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     return (log_state,user_state)
 
 def calculate(file):
+    time.sleep(10)
 
 #define reg
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
@@ -537,15 +538,16 @@ def monitor():
         dif = final.difference(origin)
         origin = final
         while len(dif) > 0:
+            print dif
             try:
                 signal.signal(signal.SIGALRM, handler)
-                signal.alarm(log_duration-5)
+                signal.alarm(5)
                 file = dif.pop()
                 if re.compile(r"^access_.+ori$").match(file):
                     new_progress(file)
                 signal.alarm(0)
             except TimeOutException, e:
-                logging.error("timeout error")
+                print "timeout error"
                 pass
             except Exception,e:
                 logging.error(str(Exception)+":"+str(e)+str(e.args))
