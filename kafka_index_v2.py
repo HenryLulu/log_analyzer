@@ -2,7 +2,7 @@ log_type = 1
 code_version = "ICSAgent V2.0"
 code_build = "2017022101"
 log_duration = 60  #s
-code_name = "./local_index.py"
+code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
 
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
