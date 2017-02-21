@@ -546,7 +546,7 @@ def monitor():
                 if re.compile(r"^access_.+log$").match(file):
                     time.sleep(random.randint(0,10))
                     calculate(file)
-                    error_files = open(pzt_dir+"timeout_logs",'r+').readlines()
+                    error_files = open(pzt_dir+"timeout_logs",'w+').readlines()
                     while len(error_files)>0:
                         err_file = error_files.pop(0)
                         open(pzt_dir+"timeout_logs",'w+').writelines(error_files)
@@ -565,7 +565,7 @@ def monitor():
                 signal.alarm(0)
             except TimeOutException, e:
                 try:
-                    add_f = open(pzt_dir+"timeout_logs",'r+').readlines()
+                    add_f = open(pzt_dir+"timeout_logs",'w+').readlines()
                     add_f.append(file+":"+str(err_try_time)+"\n")
                     open(pzt_dir+"timeout_logs",'w+').writelines(add_f)
                 except:

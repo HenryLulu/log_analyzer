@@ -109,7 +109,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     return (log_state,user_state)
 
 def calculate(file):
-    # time.sleep(10)
+    time.sleep(10)
 
 #define reg
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
@@ -536,13 +536,13 @@ def monitor():
             err_try_time = 0
             try:
                 signal.signal(signal.SIGALRM, handler)
-                signal.alarm(3000)
+                signal.alarm(5)
                 if re.compile(r"^access_.+log$").match(file):
                     print file
                     #time.sleep(random.randint(0,10))
                     calculate(file)
                     file = ""
-                    error_files = open(pzt_dir+"timeout_logs",'r+').readlines()
+                    error_files = open(pzt_dir+"timeout_logs",'w+').readlines()
                     while len(error_files)>0:
                         err_file = error_files.pop(0)
                         print err_file
@@ -563,7 +563,7 @@ def monitor():
                 signal.alarm(0)
             except TimeOutException, e:
                 try:
-                    add_f = open(pzt_dir+"timeout_logs",'r+').readlines()
+                    add_f = open(pzt_dir+"timeout_logs",'w+').readlines()
                     add_f.append(file+":"+str(err_try_time)+"\n")
                     open(pzt_dir+"timeout_logs",'w+').writelines(add_f)
                 except:
