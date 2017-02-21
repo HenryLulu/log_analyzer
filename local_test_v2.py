@@ -3,6 +3,7 @@ code_version = "ICSAgent V1.0"
 code_build = "2017021401"
 log_duration = 60  #s
 code_name = "./local_index.py"
+pzt_dir = "/Users/henry/bsfiles/pzt/"
 
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 log_dir = "/Users/henry/bsfiles"
@@ -533,22 +534,40 @@ def monitor():
     dir = log_dir
     origin = set([_f[2] for _f in os.walk(dir)][0])
     while True:
-        time.sleep(5)
+        time.sleep(3)
         final = set([_f[2] for _f in os.walk(dir)][0])
         dif = final.difference(origin)
         origin = final
         while len(dif) > 0:
-            print dif
+            file = dif.pop()
+            err_try_time = 0
             try:
                 signal.signal(signal.SIGALRM, handler)
                 signal.alarm(5)
-                file = dif.pop()
                 if re.compile(r"^access_.+ori$").match(file):
-                    new_progress(file)
+                    #time.sleep(random.randint(0,10))
+                    calculate(file)
+                    error_files = open(pzt_dir+"timeout_logs",'r').readlines()
+                    while len(error_files)>0:
+                        err_file = error_files.pop(0)
+                        open(pzt_dir+"timeout_logs",'w+').writelines(error_files)
+                        err_f_ma = re.compile(r"^(access_.+ori):(\d).+").match(err_file)
+                        if err_f_ma:
+                            file = err_f_ma.group(1)
+                            err_try_time = int(err_f_ma.group(2))
+                            if err_try_time < 10:
+                                err_try_time += err_try_time
+                                calculate(file)
+
+                    #new_progress(file)
                 signal.alarm(0)
             except TimeOutException, e:
-                print "timeout error"
-                pass
+                try:
+                    add_f = open(pzt_dir+"timeout_logs",'r').readlines()
+                    add_f.append(file+":"+str(err_try_time)+"\n")
+                    open(pzt_dir+"timeout_logs",'w+').writelines(add_f)
+                except:
+                    logging.error("add timeout file error")
             except Exception,e:
                 logging.error(str(Exception)+":"+str(e)+str(e.args))
 
