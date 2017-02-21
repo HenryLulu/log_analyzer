@@ -109,7 +109,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     return (log_state,user_state)
 
 def calculate(file):
-    time.sleep(10)
+    # time.sleep(10)
 
 #define reg
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
@@ -499,36 +499,29 @@ def calculate(file):
 #send to kafka
     user_list_json = json.JSONEncoder().encode(user_list)
     log_info_json = json.JSONEncoder().encode(log_info)
+    print log_info_json
 
-    retry_time = 10
-    log_state = False
-    user_state = False
-    while retry_time>0:
-        retry_time -= 1
-        res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
-        log_state = res[0]
-        user_state = res[1]
-        if log_state and user_state:
-            logging.info("Complete")
-            break
-        time.sleep(5)
-    if retry_time == 0:
-        logging.error("Kafka error and retry failed")
-        raise TimeOutException()
+    # retry_time = 10
+    # log_state = False
+    # user_state = False
+    # while retry_time>0:
+    #     retry_time -= 1
+    #     res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
+    #     log_state = res[0]
+    #     user_state = res[1]
+    #     if log_state and user_state:
+    #         logging.info("Complete")
+    #         break
+    #     time.sleep(5)
+    # if retry_time == 0:
+    #     logging.error("Kafka error and retry failed")
+    #     raise TimeOutException()
 
     #func end
 
 def handler(signum, frame):
     logging.error("Log Timeout")
     raise TimeOutException()
-
-def new_progress(file):
-    logging.info(file)
-
-    p = Process(target=calculate, args=(file,))
-    time.sleep(random.randint(0,10))
-    p.start()
-    p.join()
 
 def monitor():
     dir = log_dir
@@ -543,27 +536,34 @@ def monitor():
             err_try_time = 0
             try:
                 signal.signal(signal.SIGALRM, handler)
-                signal.alarm(5)
+                signal.alarm(3000)
                 if re.compile(r"^access_.+ori$").match(file):
+                    print file
                     #time.sleep(random.randint(0,10))
                     calculate(file)
-                    error_files = open(pzt_dir+"timeout_logs",'r').readlines()
+                    file = ""
+                    error_files = open(pzt_dir+"timeout_logs",'r+').readlines()
                     while len(error_files)>0:
                         err_file = error_files.pop(0)
+                        print err_file
                         open(pzt_dir+"timeout_logs",'w+').writelines(error_files)
-                        err_f_ma = re.compile(r"^(access_.+ori):(\d).+").match(err_file)
+                        err_f_ma = re.compile(r"^(access_.+ori):(\d).*").match(err_file)
                         if err_f_ma:
                             file = err_f_ma.group(1)
                             err_try_time = int(err_f_ma.group(2))
-                            if err_try_time < 10:
-                                err_try_time += err_try_time
-                                calculate(file)
+                            if err_try_time < 9:
+                                print file
+                                err_try_time += 1
+                                try:
+                                    calculate(file)
+                                except:
+                                    logging.error("File: "+file+" doesn't exist")
 
                     #new_progress(file)
                 signal.alarm(0)
             except TimeOutException, e:
                 try:
-                    add_f = open(pzt_dir+"timeout_logs",'r').readlines()
+                    add_f = open(pzt_dir+"timeout_logs",'r+').readlines()
                     add_f.append(file+":"+str(err_try_time)+"\n")
                     open(pzt_dir+"timeout_logs",'w+').writelines(add_f)
                 except:

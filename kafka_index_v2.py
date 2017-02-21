@@ -546,7 +546,7 @@ def monitor():
                 if re.compile(r"^access_.+ori$").match(file):
                     time.sleep(random.randint(0,10))
                     calculate(file)
-                    error_files = open(pzt_dir+"timeout_logs",'r').readlines()
+                    error_files = open(pzt_dir+"timeout_logs",'r+').readlines()
                     while len(error_files)>0:
                         err_file = error_files.pop(0)
                         open(pzt_dir+"timeout_logs",'w+').writelines(error_files)
@@ -554,15 +554,18 @@ def monitor():
                         if err_f_ma:
                             file = err_f_ma.group(1)
                             err_try_time = int(err_f_ma.group(2))
-                            if err_try_time < 10:
-                                err_try_time += err_try_time
-                                calculate(file)
+                            if err_try_time < 9:
+                                err_try_time += 1
+                                try:
+                                    calculate(file)
+                                except:
+                                    logging.error("File: "+file+" doesn't exist")
 
                     #new_progress(file)
                 signal.alarm(0)
             except TimeOutException, e:
                 try:
-                    add_f = open(pzt_dir+"timeout_logs",'r').readlines()
+                    add_f = open(pzt_dir+"timeout_logs",'r+').readlines()
                     add_f.append(file+":"+str(err_try_time)+"\n")
                     open(pzt_dir+"timeout_logs",'w+').writelines(add_f)
                 except:
