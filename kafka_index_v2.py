@@ -543,14 +543,14 @@ def monitor():
             try:
                 signal.signal(signal.SIGALRM, handler)
                 signal.alarm(50)
-                if re.compile(r"^access_.+ori$").match(file):
+                if re.compile(r"^access_.+log$").match(file):
                     time.sleep(random.randint(0,10))
                     calculate(file)
                     error_files = open(pzt_dir+"timeout_logs",'r+').readlines()
                     while len(error_files)>0:
                         err_file = error_files.pop(0)
                         open(pzt_dir+"timeout_logs",'w+').writelines(error_files)
-                        err_f_ma = re.compile(r"^(access_.+ori):(\d).+").match(err_file)
+                        err_f_ma = re.compile(r"^(access_.+log):(\d).+").match(err_file)
                         if err_f_ma:
                             file = err_f_ma.group(1)
                             err_try_time = int(err_f_ma.group(2))
