@@ -6,7 +6,7 @@ code_name = "./local_index.py"
 pzt_dir = "/Users/henry/bsfiles/pzt/"
 
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
-log_dir = "/Users/henry/bsfiles"
+log_dir = "/Users/henry/bsfiles/new"
 
 from kafka import KafkaProducer
 from multiprocessing import Process
@@ -109,7 +109,6 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     return (log_state,user_state)
 
 def calculate(file):
-    time.sleep(10)
 
 #define reg
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
@@ -579,4 +578,5 @@ def main():
     except:
         logging.error("Init fail")
 
-main()
+# main()
+calculate("access_20170226113800.log")
