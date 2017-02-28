@@ -5,11 +5,19 @@ log_duration = 60  #s
 code_name = "./local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
 
+ftp_conf = {
+    "addr": "139.217.15.189",
+    "port": "21",
+    "user": "upload",
+    "pwd": "sjdd123",
+    "remote_dir":"/opt/vsftp/upload/"
+}
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 log_dir = "/usr/local/pzs/pzlogbak"
 
 from kafka import KafkaProducer
 from multiprocessing import Process
+from ftplib import FTP
 import re
 import os
 import time
@@ -109,7 +117,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     return (log_state,user_state)
 
 def calculate(file):
-
+    logging.info("start analyzing:"+file)
 #define reg
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
     live_re = re.compile(r"^(.+)/live/(ld/flv|ld/trans|flv|trans)/")
@@ -444,7 +452,7 @@ def calculate(file):
             current_category['suc_r'] = round(float(current_category['suc_n']*100)/current_category['req_n'],2)
         if len(user_list)!=0:
             current_category['freeze_r'] = round(float(current_category['jam_n']*100)/len(user_list),2)
-        current_category['band'] = round(float(current_category['flu'])*8/300/1000,2)
+        current_category['band'] = round(float(current_category['flu'])*8/60/1000,2)
         try:
             current_category['bitrate'] = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
         except:
@@ -508,7 +516,7 @@ def calculate(file):
         log_state = res[0]
         user_state = res[1]
         if log_state and user_state:
-            logging.info("Complete")
+            logging.info("complete analyzing:"+file)
             break
         time.sleep(5)
     if retry_time == 0:
@@ -521,13 +529,26 @@ def handler(signum, frame):
     logging.error("Log Timeout")
     raise TimeOutException()
 
-def new_progress(file):
-    logging.info(file)
-
-    p = Process(target=calculate, args=(file,))
-    time.sleep(random.randint(0,10))
-    p.start()
-    p.join()
+def upload(file):
+    logging.info("start uploading:"+file)
+    re_up_time = 0
+    while re_up_time <3:
+        re_up_time = re_up_time+1
+        try:
+            ftp=FTP()
+            ftp.connect(ftp_conf["addr"],ftp_conf["port"])
+            ftp.login(ftp_conf["user"],ftp_conf["pwd"])
+            ftp.cmd(ftp_conf["remote_dir"])
+            bufsize=1024
+            ftp.storbinaly("STOR filename.txt",log_dir+"/"+file,bufsize)
+            ftp.quit()
+        except Exception,e:
+            logging.error(str(Exception)+":"+str(e)+str(e.args))
+            logging.error("fail to upload:" + file + ", now retry...")
+    if re_up_time < 3:
+        logging.info("complete uploading:"+file)
+    else:
+        logging.error("failed to upload:"+file+",and retry failed")
 
 def monitor():
     dir = log_dir
@@ -539,11 +560,11 @@ def monitor():
         origin = final
         while len(dif) > 0:
             file = dif.pop()
-            err_try_time = 0
-            try:
-                signal.signal(signal.SIGALRM, handler)
-                signal.alarm(50)
-                if re.compile(r"^access_.+log$").match(file):
+            if re.compile(r"^access_.+log$").match(file):
+                err_try_time = 0
+                try:
+                    signal.signal(signal.SIGALRM, handler)
+                    signal.alarm(50)
                     time.sleep(random.randint(0,10))
                     calculate(file)
                     error_files = open(pzt_dir+"timeout_logs",'w+').readlines()
@@ -561,17 +582,26 @@ def monitor():
                                 except:
                                     logging.error("File: "+file+" doesn't exist")
 
-                    #new_progress(file)
-                signal.alarm(0)
-            except TimeOutException, e:
+                        #new_progress(file)
+                    signal.alarm(0)
+                except TimeOutException, e:
+                    try:
+                        add_f = open(pzt_dir+"timeout_logs",'w+').readlines()
+                        add_f.append(file+":"+str(err_try_time)+"\n")
+                        open(pzt_dir+"timeout_logs",'w+').writelines(add_f)
+                    except:
+                        logging.error("add timeout file error")
+                except Exception,e:
+                    logging.error(str(Exception)+":"+str(e)+str(e.args))
+
+            elif re.compile(r"^access_.+log.7z$").match(file):
                 try:
-                    add_f = open(pzt_dir+"timeout_logs",'w+').readlines()
-                    add_f.append(file+":"+str(err_try_time)+"\n")
-                    open(pzt_dir+"timeout_logs",'w+').writelines(add_f)
+                    p = Process(target=upload, args=(file,))
+                    time.sleep(random.randint(0,10))
+                    p.start()
+                    p.join()
                 except:
-                    logging.error("add timeout file error")
-            except Exception,e:
-                logging.error(str(Exception)+":"+str(e)+str(e.args))
+                    logging.error("fail to start upload progress:"+file)
 
 def main():
     init_log()
