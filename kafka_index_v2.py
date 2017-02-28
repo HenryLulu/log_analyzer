@@ -6,11 +6,11 @@ code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
 
 ftp_conf = {
-    "addr": "139.217.15.189",
+    "addr": "monitor1.powzamedia.com",
     "port": "20021",
     "user": "upload",
     "pwd": "sjdd123",
-    "remote_dir":"/opt/vsftp/upload/"
+    "remote_dir":"/data2/upload/"
 }
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
 log_dir = "/usr/local/pzs/pzlogbak"
@@ -58,6 +58,17 @@ except:
         if not in_ip_re.match(ip):
             server_ip = ip
             break
+
+cdn_name = "unknow"
+if log_type==1:
+    cdn_name = "kw"
+elif log_type==2:
+    cdn_name = "dl"
+elif log_type==3:
+    cdn_name = "ws"
+elif log_type==4:
+    cdn_name = "pbs"
+
 class TimeOutException(Exception):
     pass
 
@@ -540,7 +551,7 @@ def upload(file):
             ftp.login(ftp_conf["user"],ftp_conf["pwd"])
             ftp.cwd(ftp_conf["remote_dir"])
             file_stream = open(log_dir+"/"+file,'rb')
-            ftp.storbinary("STOR "+file,file_stream)
+            ftp.storbinary("STOR "+cdn_name+"_"+server_ip+"_"+file,file_stream)
             ftp.quit()
         except Exception,e:
             logging.error(str(Exception)+":"+str(e)+str(e.args))
