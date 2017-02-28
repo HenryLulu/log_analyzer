@@ -553,6 +553,7 @@ def upload(file):
             file_stream = open(log_dir+"/"+file,'rb')
             ftp.storbinary("STOR "+cdn_name+"_"+server_ip+"_"+file,file_stream)
             ftp.quit()
+            break
         except Exception,e:
             logging.error(str(Exception)+":"+str(e)+str(e.args))
             logging.error("fail to upload:" + file + ", now retry...")
