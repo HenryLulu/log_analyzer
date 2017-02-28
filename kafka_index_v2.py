@@ -444,7 +444,7 @@ def calculate(file):
             current_category['suc_r'] = round(float(current_category['suc_n']*100)/current_category['req_n'],2)
         if len(user_list)!=0:
             current_category['freeze_r'] = round(float(current_category['jam_n']*100)/len(user_list),2)
-        current_category['band'] = round(float(current_category['flu'])*8/300/1000,2)
+        current_category['band'] = round(float(current_category['flu'])*8/log_duration/1000,2)
         try:
             current_category['bitrate'] = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
         except:
