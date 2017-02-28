@@ -7,7 +7,7 @@ pzt_dir = "/usr/local/pzs/pzt/"
 
 ftp_conf = {
     "addr": "139.217.15.189",
-    "port": "21",
+    "port": "20021",
     "user": "upload",
     "pwd": "sjdd123",
     "remote_dir":"/opt/vsftp/upload/"
@@ -18,6 +18,7 @@ log_dir = "/usr/local/pzs/pzlogbak"
 from kafka import KafkaProducer
 from multiprocessing import Process
 from ftplib import FTP
+ftp = FTP()
 import re
 import os
 import time
@@ -535,12 +536,11 @@ def upload(file):
     while re_up_time <3:
         re_up_time = re_up_time+1
         try:
-            ftp=FTP()
             ftp.connect(ftp_conf["addr"],ftp_conf["port"])
             ftp.login(ftp_conf["user"],ftp_conf["pwd"])
-            ftp.cmd(ftp_conf["remote_dir"])
-            bufsize=1024
-            ftp.storbinaly("STOR filename.txt",log_dir+"/"+file,bufsize)
+            ftp.cwd(ftp_conf["remote_dir"])
+            file_stream = open(log_dir+"/"+file,'rb')
+            ftp.storbinary("STOR "+file,file_stream)
             ftp.quit()
         except Exception,e:
             logging.error(str(Exception)+":"+str(e)+str(e.args))
