@@ -1,6 +1,6 @@
 log_type = 1
-code_version = "ICSAgent V1.0"
-code_build = "2017021401"
+code_version = "ICSAgent V2.0"
+code_build = "2017022801"
 log_duration = 60  #s
 code_name = "./local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
