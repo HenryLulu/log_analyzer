@@ -303,6 +303,7 @@ def calculate(file):
             tim = int(x_group[0])
             status = x_group[2]=="200" or x_group[6]=="206" or x_group[6]=="304"
             flu = int(x_group[3])
+            duration = int(x_group[4])
             channel = x_group[7].split(".")[0]
 
             req_ma = req_re.match(x_group[9])
@@ -311,7 +312,7 @@ def calculate(file):
                 rate = str(int(req_ma.group(2))%5)
                 seg = req_ma.group(3)==u"1"
                 segnum = int(req_ma.group(4))
-                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
+                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu,duration)
                 if seg:
                     top_list['hds_1']['list'].append(r)
                 else:
@@ -323,7 +324,7 @@ def calculate(file):
                     live_jam = int(x_group[5])>0
                 except:
                     live_jam = False
-                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
+                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu,duration)
                 if top_list.has_key(type):
                     top_list[type]['list'].append(r)
         except:
@@ -344,6 +345,8 @@ def calculate(file):
                     user_list[l[0]]["req_n"] += 1
                     if l[2]:
                         user_list[l[0]]["suc_n"] += 1
+                    user_list[l[0]]["flu"] += l[9]
+                    user_list[l[0]]["duration"] += l[10]
                 else:
                     user_list[l[0]] = {
                         "from":log_type,
@@ -357,6 +360,7 @@ def calculate(file):
                         "seg_e":l[6],
                         "agent":l[8],
                         "flu":l[9],
+                        "duration":l[10],
                         "rate_n":{
                             "0":0,
                             "1":0,
@@ -412,6 +416,8 @@ def calculate(file):
                     user_list[l[0]]["req_n"] += 1
                     if l[2]:
                         user_list[l[0]]["suc_n"] += 1
+                    user_list[l[0]]["flu"] += l[9]
+                    user_list[l[0]]["duration"] += l[10]
                 else:
                     user_list[l[0]] = {
                         "from":log_type,
@@ -424,6 +430,7 @@ def calculate(file):
                         "jam": l[6],
                         "s_ip": server_ip,
                         "flu":l[9],
+                        "duration":l[10],
                         "rate_n":{
                             "0":0,
                             "1":0,
