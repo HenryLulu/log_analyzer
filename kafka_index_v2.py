@@ -129,6 +129,9 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     return (log_state,user_state)
 
 def calculate(file):
+    start = file[7:21]
+    starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
+
     logging.info("start analyzing:"+file)
 #define reg
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
@@ -349,6 +352,7 @@ def calculate(file):
                     user_list[l[0]]["duration"] += l[10]
                 else:
                     user_list[l[0]] = {
+                        "log_time":starttm,
                         "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
@@ -420,6 +424,7 @@ def calculate(file):
                     user_list[l[0]]["duration"] += l[10]
                 else:
                     user_list[l[0]] = {
+                        "log_time":starttm,
                         "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
@@ -506,9 +511,6 @@ def calculate(file):
         del current_category['users']
 
 #add total keys
-    start = file[7:21]
-    starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
-
     user_list = total['user_list']
     log_info = top_list
     log_info['from'] = log_type
