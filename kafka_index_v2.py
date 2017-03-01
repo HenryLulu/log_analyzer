@@ -151,6 +151,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -172,6 +173,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -193,6 +195,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -214,6 +217,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -235,6 +239,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -256,6 +261,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -273,7 +279,8 @@ def calculate(file):
         'flu':0,
         'band':0,
         'rate_n':{
-            '1':0,
+            "0":0,
+            "1":0,
             '2':0,
             '3':0,
             '4':0
@@ -351,6 +358,7 @@ def calculate(file):
                         "agent":l[8],
                         "flu":l[9],
                         "rate_n":{
+                            "0":0,
                             "1":0,
                             "2":0,
                             "3":0,
@@ -417,6 +425,7 @@ def calculate(file):
                         "s_ip": server_ip,
                         "flu":l[9],
                         "rate_n":{
+                            "0":0,
                             "1":0,
                             "2":0,
                             "3":0,
@@ -440,7 +449,10 @@ def calculate(file):
 
                 lrms = long_rate_re.findall(l[4])
                 for lrm in lrms:
-                    k = str((2500-int(lrm[0]))/500)
+                    if int(lrm[0])==4000:
+                        k = "0"
+                    else:
+                        k = str((2500-int(lrm[0]))/500)
                     if rate_list.has_key(k):
                         rate_list[k] += int(lrm[1])
                     else:
@@ -466,7 +478,7 @@ def calculate(file):
             current_category['freeze_r'] = round(float(current_category['jam_n']*100)/len(user_list),2)
         current_category['band'] = round(float(current_category['flu'])*8/log_duration/1000,2)
         try:
-            current_category['bitrate'] = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
+            current_category['bitrate'] = (rate_list["0"]*4000+rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
         except:
             current_category['bitrate'] = 0
 
@@ -510,7 +522,7 @@ def calculate(file):
     log_info['band'] = total['band']
     log_info['rate_n'] = total['rate_n']
     try:
-        log_info['bitrate'] = (log_info['rate_n']["1"]*2000+log_info['rate_n']["2"]*1500+log_info['rate_n']["3"]*850+log_info['rate_n']["4"]*500)/(log_info['rate_n']["1"]+log_info['rate_n']["2"]+log_info['rate_n']["3"]+log_info['rate_n']["4"])
+        log_info['bitrate'] = (rate_list["0"]*4000+log_info['rate_n']["1"]*2000+log_info['rate_n']["2"]*1500+log_info['rate_n']["3"]*850+log_info['rate_n']["4"]*500)/(log_info['rate_n']["1"]+log_info['rate_n']["2"]+log_info['rate_n']["3"]+log_info['rate_n']["4"])
     except:
         log_info['bitrate'] = 0
     log_info['channel_n'] = total['channel_n']
