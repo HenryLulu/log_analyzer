@@ -1,15 +1,24 @@
 log_type = 1
-code_version = "ICSAgent V1.0"
-code_build = "2017021401"
+code_version = "ICSAgent V2.1"
+code_build = "2017030201"
 log_duration = 60  #s
-code_name = "./local_index.py"
-pzt_dir = "/Users/henry/bsfiles/pzt/"
+code_name = "/usr/local/pzs/pzt/local_index.py"
+pzt_dir = "/Users/henry/bsfiles/new/"
 
+ftp_conf = {
+    "addr": "monitor1.powzamedia.com",
+    "port": "20021",
+    "user": "upload",
+    "pwd": "sjdd123",
+    "remote_dir":"/data2/upload/"
+}
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
-log_dir = "/Users/henry/bsfiles/new"
+log_dir = "/usr/local/pzs/pzlogbak"
 
 from kafka import KafkaProducer
 from multiprocessing import Process
+from ftplib import FTP
+ftp = FTP()
 import re
 import os
 import time
@@ -49,26 +58,37 @@ except:
         if not in_ip_re.match(ip):
             server_ip = ip
             break
+
+cdn_name = "unknow"
+if log_type==1:
+    cdn_name = "kw"
+elif log_type==2:
+    cdn_name = "dl"
+elif log_type==3:
+    cdn_name = "ws"
+elif log_type==4:
+    cdn_name = "pbs"
+
 class TimeOutException(Exception):
     pass
 
 def init_log():
     try:
-        os.rename("info_2.log","info_3.log")
+        os.rename("/usr/local/pzs/pzt/info_2.log","/usr/local/pzs/pzt/info_3.log")
     except:
         pass
     try:
-        os.rename("info_1.log","info_2.log")
+        os.rename("/usr/local/pzs/pzt/info_1.log","/usr/local/pzs/pzt/info_2.log")
     except:
         pass
     try:
-        os.rename("info.log","info_1.log")
+        os.rename("/usr/local/pzs/pzt/info.log","/usr/local/pzs/pzt/info_1.log")
     except:
         pass
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        filename='info.log',
+        filename='/usr/local/pzs/pzt/info.log',
         filemode='w')
 
 def ifjam(u):
@@ -109,7 +129,10 @@ def conn_kafka(user_list,log_info,log_state,user_state):
     return (log_state,user_state)
 
 def calculate(file):
+    start = file[7:21]
+    starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
 
+    logging.info("start analyzing:"+file)
 #define reg
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
     live_re = re.compile(r"^(.+)/live/(ld/flv|ld/trans|flv|trans)/")
@@ -131,6 +154,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -152,6 +176,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -173,6 +198,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -194,6 +220,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -215,6 +242,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -236,6 +264,7 @@ def calculate(file):
             "flu":0,
             "band":0,
             "rate_n":{
+                "0":0,
                 "1":0,
                 "2":0,
                 "3":0,
@@ -253,7 +282,8 @@ def calculate(file):
         'flu':0,
         'band':0,
         'rate_n':{
-            '1':0,
+            "0":0,
+            "1":0,
             '2':0,
             '3':0,
             '4':0
@@ -274,8 +304,9 @@ def calculate(file):
                 continue
             ip = x_group[1]
             tim = int(x_group[0])
-            status = x_group[2]=="200" or x_group[2]=="206" or x_group[2]=="304"
+            status = bool(re.compile(r"^(2|3)\d{2}$").match(x_group[2]))
             flu = int(x_group[3])
+            duration = int(x_group[4])
             channel = x_group[7].split(".")[0]
 
             req_ma = req_re.match(x_group[9])
@@ -284,7 +315,7 @@ def calculate(file):
                 rate = str(int(req_ma.group(2))%5)
                 seg = req_ma.group(3)==u"1"
                 segnum = int(req_ma.group(4))
-                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu)
+                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu,duration)
                 if seg:
                     top_list['hds_1']['list'].append(r)
                 else:
@@ -296,7 +327,7 @@ def calculate(file):
                     live_jam = int(x_group[5])>0
                 except:
                     live_jam = False
-                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu)
+                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu,duration)
                 if top_list.has_key(type):
                     top_list[type]['list'].append(r)
         except:
@@ -317,8 +348,11 @@ def calculate(file):
                     user_list[l[0]]["req_n"] += 1
                     if l[2]:
                         user_list[l[0]]["suc_n"] += 1
+                    user_list[l[0]]["flu"] += l[9]
+                    user_list[l[0]]["duration"] += l[10]
                 else:
                     user_list[l[0]] = {
+                        "log_time":starttm,
                         "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
@@ -330,7 +364,9 @@ def calculate(file):
                         "seg_e":l[6],
                         "agent":l[8],
                         "flu":l[9],
+                        "duration":l[10],
                         "rate_n":{
+                            "0":0,
                             "1":0,
                             "2":0,
                             "3":0,
@@ -384,8 +420,11 @@ def calculate(file):
                     user_list[l[0]]["req_n"] += 1
                     if l[2]:
                         user_list[l[0]]["suc_n"] += 1
+                    user_list[l[0]]["flu"] += l[9]
+                    user_list[l[0]]["duration"] += l[10]
                 else:
                     user_list[l[0]] = {
+                        "log_time":starttm,
                         "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
@@ -396,7 +435,9 @@ def calculate(file):
                         "jam": l[6],
                         "s_ip": server_ip,
                         "flu":l[9],
+                        "duration":l[10],
                         "rate_n":{
+                            "0":0,
                             "1":0,
                             "2":0,
                             "3":0,
@@ -420,7 +461,10 @@ def calculate(file):
 
                 lrms = long_rate_re.findall(l[4])
                 for lrm in lrms:
-                    k = str((2500-int(lrm[0]))/500)
+                    if int(lrm[0])==4000:
+                        k = "0"
+                    else:
+                        k = str((2500-int(lrm[0]))/500)
                     if rate_list.has_key(k):
                         rate_list[k] += int(lrm[1])
                     else:
@@ -444,9 +488,9 @@ def calculate(file):
             current_category['suc_r'] = round(float(current_category['suc_n']*100)/current_category['req_n'],2)
         if len(user_list)!=0:
             current_category['freeze_r'] = round(float(current_category['jam_n']*100)/len(user_list),2)
-        current_category['band'] = round(float(current_category['flu'])*8/300/1000,2)
+        current_category['band'] = round(float(current_category['flu'])*8/log_duration/1000,2)
         try:
-            current_category['bitrate'] = (rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
+            current_category['bitrate'] = (rate_list["0"]*4000+rate_list["1"]*2000+rate_list["2"]*1500+rate_list["3"]*850+rate_list["4"]*500)/(rate_list["1"]+rate_list["2"]+rate_list["3"]+rate_list["4"])
         except:
             current_category['bitrate'] = 0
 
@@ -467,9 +511,6 @@ def calculate(file):
         del current_category['users']
 
 #add total keys
-    start = file[7:21]
-    starttm = int(time.mktime((int(start[0:4]),int(start[4:6]),int(start[6:8]),int(start[8:10]),int(start[10:12]),int(start[12:14]),0,0,0)))
-
     user_list = total['user_list']
     log_info = top_list
     log_info['from'] = log_type
@@ -490,7 +531,7 @@ def calculate(file):
     log_info['band'] = total['band']
     log_info['rate_n'] = total['rate_n']
     try:
-        log_info['bitrate'] = (log_info['rate_n']["1"]*2000+log_info['rate_n']["2"]*1500+log_info['rate_n']["3"]*850+log_info['rate_n']["4"]*500)/(log_info['rate_n']["1"]+log_info['rate_n']["2"]+log_info['rate_n']["3"]+log_info['rate_n']["4"])
+        log_info['bitrate'] = (rate_list["0"]*4000+log_info['rate_n']["1"]*2000+log_info['rate_n']["2"]*1500+log_info['rate_n']["3"]*850+log_info['rate_n']["4"]*500)/(log_info['rate_n']["1"]+log_info['rate_n']["2"]+log_info['rate_n']["3"]+log_info['rate_n']["4"])
     except:
         log_info['bitrate'] = 0
     log_info['channel_n'] = total['channel_n']
@@ -498,29 +539,49 @@ def calculate(file):
 #send to kafka
     user_list_json = json.JSONEncoder().encode(user_list)
     log_info_json = json.JSONEncoder().encode(log_info)
-    print log_info_json
 
-    # retry_time = 10
-    # log_state = False
-    # user_state = False
-    # while retry_time>0:
-    #     retry_time -= 1
-    #     res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
-    #     log_state = res[0]
-    #     user_state = res[1]
-    #     if log_state and user_state:
-    #         logging.info("Complete")
-    #         break
-    #     time.sleep(5)
-    # if retry_time == 0:
-    #     logging.error("Kafka error and retry failed")
-    #     raise TimeOutException()
+    retry_time = 10
+    log_state = False
+    user_state = False
+    while retry_time>0:
+        retry_time -= 1
+        res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
+        log_state = res[0]
+        user_state = res[1]
+        if log_state and user_state:
+            logging.info("complete analyzing:"+file)
+            break
+        time.sleep(5)
+    if retry_time == 0:
+        logging.error("Kafka error and retry failed")
+        raise TimeOutException()
 
     #func end
 
 def handler(signum, frame):
     logging.error("Log Timeout")
     raise TimeOutException()
+
+def upload(file):
+    logging.info("start uploading:"+file)
+    re_up_time = 0
+    while re_up_time <3:
+        re_up_time = re_up_time+1
+        try:
+            ftp.connect(ftp_conf["addr"],ftp_conf["port"])
+            ftp.login(ftp_conf["user"],ftp_conf["pwd"])
+            ftp.cwd(ftp_conf["remote_dir"])
+            file_stream = open(log_dir+"/"+file,'rb')
+            ftp.storbinary("STOR "+cdn_name+"_"+server_ip+"_"+file,file_stream)
+            ftp.quit()
+            break
+        except Exception,e:
+            logging.error(str(Exception)+":"+str(e)+str(e.args))
+            logging.error("fail to upload:" + file + ", now retry...")
+    if re_up_time < 3:
+        logging.info("complete uploading:"+file)
+    else:
+        logging.error("failed to upload:"+file+",and retry failed")
 
 def monitor():
     dir = log_dir
@@ -532,43 +593,48 @@ def monitor():
         origin = final
         while len(dif) > 0:
             file = dif.pop()
-            err_try_time = 0
-            try:
-                signal.signal(signal.SIGALRM, handler)
-                signal.alarm(5)
-                if re.compile(r"^access_.+log$").match(file):
-                    print file
-                    #time.sleep(random.randint(0,10))
+            if re.compile(r"^access_.+log$").match(file):
+                err_try_time = 0
+                try:
+                    signal.signal(signal.SIGALRM, handler)
+                    signal.alarm(50)
+                    time.sleep(random.randint(0,10))
                     calculate(file)
-                    file = ""
                     error_files = open(pzt_dir+"timeout_logs",'w+').readlines()
                     while len(error_files)>0:
                         err_file = error_files.pop(0)
-                        print err_file
                         open(pzt_dir+"timeout_logs",'w+').writelines(error_files)
-                        err_f_ma = re.compile(r"^(access_.+log):(\d).*").match(err_file)
+                        err_f_ma = re.compile(r"^(access_.+log):(\d).+").match(err_file)
                         if err_f_ma:
                             file = err_f_ma.group(1)
                             err_try_time = int(err_f_ma.group(2))
                             if err_try_time < 9:
-                                print file
                                 err_try_time += 1
                                 try:
                                     calculate(file)
                                 except:
                                     logging.error("File: "+file+" doesn't exist")
 
-                    #new_progress(file)
-                signal.alarm(0)
-            except TimeOutException, e:
+                        #new_progress(file)
+                    signal.alarm(0)
+                except TimeOutException, e:
+                    try:
+                        add_f = open(pzt_dir+"timeout_logs",'w+').readlines()
+                        add_f.append(file+":"+str(err_try_time)+"\n")
+                        open(pzt_dir+"timeout_logs",'w+').writelines(add_f)
+                    except:
+                        logging.error("add timeout file error")
+                except Exception,e:
+                    logging.error(str(Exception)+":"+str(e)+str(e.args))
+
+            elif re.compile(r"^access_.+log.7z$").match(file):
                 try:
-                    add_f = open(pzt_dir+"timeout_logs",'w+').readlines()
-                    add_f.append(file+":"+str(err_try_time)+"\n")
-                    open(pzt_dir+"timeout_logs",'w+').writelines(add_f)
+                    p = Process(target=upload, args=(file,))
+                    time.sleep(random.randint(0,10))
+                    p.start()
+                    p.join()
                 except:
-                    logging.error("add timeout file error")
-            except Exception,e:
-                logging.error(str(Exception)+":"+str(e)+str(e.args))
+                    logging.error("fail to start upload progress:"+file)
 
 def main():
     init_log()
@@ -579,4 +645,4 @@ def main():
         logging.error("Init fail")
 
 # main()
-calculate("access_20170226113800.log")
+calculate("")
