@@ -304,7 +304,7 @@ def calculate(file):
                 continue
             ip = x_group[1]
             tim = int(x_group[0])
-            status = x_group[2]=="200" or x_group[6]=="206" or x_group[6]=="304"
+            status = bool(re.compile(r"^(2|3)\d{2}$").match(x_group[2]))
             flu = int(x_group[3])
             duration = int(x_group[4])
             channel = x_group[7].split(".")[0]
