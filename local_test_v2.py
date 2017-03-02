@@ -274,7 +274,7 @@ def calculate(file):
                 continue
             ip = x_group[1]
             tim = int(x_group[0])
-            status = x_group[2]=="200" or x_group[6]=="206" or x_group[6]=="304"
+            status = x_group[2]=="200" or x_group[2]=="206" or x_group[2]=="304"
             flu = int(x_group[3])
             channel = x_group[7].split(".")[0]
 
