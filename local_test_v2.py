@@ -1,9 +1,9 @@
 log_type = 1
-code_version = "ICSAgent V2.1"
-code_build = "2017030201"
+code_version = "ICSAgent V2 test"
+code_build = "test"
 log_duration = 60  #s
 code_name = "/usr/local/pzs/pzt/local_index.py"
-pzt_dir = "/Users/henry/bsfiles/new/"
+pzt_dir = "./"
 
 ftp_conf = {
     "addr": "monitor1.powzamedia.com",
@@ -13,7 +13,7 @@ ftp_conf = {
     "remote_dir":"/data2/upload/"
 }
 kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
-log_dir = "/usr/local/pzs/pzlogbak"
+log_dir = "/Users/henry/bsfiles/new/"
 
 from kafka import KafkaProducer
 from multiprocessing import Process
@@ -645,4 +645,4 @@ def main():
         logging.error("Init fail")
 
 # main()
-calculate("")
+calculate("access_20170302153000.log")
