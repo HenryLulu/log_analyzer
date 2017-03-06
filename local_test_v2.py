@@ -1,4 +1,4 @@
-log_type = 1
+log_type = 2
 code_version = "ICSAgent V2 test"
 code_build = "test"
 log_duration = 60  #s
