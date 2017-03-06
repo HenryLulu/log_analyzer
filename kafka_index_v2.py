@@ -137,7 +137,7 @@ def calculate(file):
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
     live_re = re.compile(r"^(.*)/live/(ld/flv|ld/trans|flv|trans)/")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
-    channel_re = re.compile(r'^([\D+]+[^.]*)\..*')
+    channel_re = re.compile(r'^([^\d\.]+[^\.]*)\..*')
     logs = open(log_dir+"/"+file,'r').readlines()
 
 #init top_list
