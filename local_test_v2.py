@@ -135,8 +135,9 @@ def calculate(file):
     logging.info("start analyzing:"+file)
 #define reg
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
-    live_re = re.compile(r"^(.+)/live/(ld/flv|ld/trans|flv|trans)/")
+    live_re = re.compile(r"^(.*)/live/(ld/flv|ld/trans|flv|trans)/")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
+    channel_re = re.compile(r'^([\D+]+[^.]*)\..*')
     logs = open(log_dir+"/"+file,'r').readlines()
 
 #init top_list
@@ -307,10 +308,14 @@ def calculate(file):
             status = bool(re.compile(r"^(2|3)\d{2}$").match(x_group[2]))
             flu = int(x_group[3])
             duration = int(x_group[4])
-            channel = x_group[7].split(".")[0]
-
+            # channel = x_group[7].split(".")[0]
+            channel_ma = channel_re.match(x_group[7])
             req_ma = req_re.match(x_group[9])
             live_ma = live_re.match(x_group[9])
+            if channel_ma:
+                channel = channel_ma.group(1)
+            else:
+                channel = "unknow"
             if req_ma:
                 rate = str(int(req_ma.group(2))%5)
                 seg = req_ma.group(3)==u"1"
@@ -540,21 +545,22 @@ def calculate(file):
     user_list_json = json.JSONEncoder().encode(user_list)
     log_info_json = json.JSONEncoder().encode(log_info)
 
-    retry_time = 10
-    log_state = False
-    user_state = False
-    while retry_time>0:
-        retry_time -= 1
-        res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
-        log_state = res[0]
-        user_state = res[1]
-        if log_state and user_state:
-            logging.info("complete analyzing:"+file)
-            break
-        time.sleep(5)
-    if retry_time == 0:
-        logging.error("Kafka error and retry failed")
-        raise TimeOutException()
+    print log_info_json
+    # retry_time = 10
+    # log_state = False
+    # user_state = False
+    # while retry_time>0:
+    #     retry_time -= 1
+    #     res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
+    #     log_state = res[0]
+    #     user_state = res[1]
+    #     if log_state and user_state:
+    #         logging.info("complete analyzing:"+file)
+    #         break
+    #     time.sleep(5)
+    # if retry_time == 0:
+    #     logging.error("Kafka error and retry failed")
+    #     raise TimeOutException()
 
     #func end
 
@@ -645,4 +651,4 @@ def main():
         logging.error("Init fail")
 
 # main()
-calculate("access_20170302153000.log")
+calculate("access_20170306102902.log")

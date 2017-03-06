@@ -135,8 +135,9 @@ def calculate(file):
     logging.info("start analyzing:"+file)
 #define reg
     req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
-    live_re = re.compile(r"^(.+)/live/(ld/flv|ld/trans|flv|trans)/")
+    live_re = re.compile(r"^(.*)/live/(ld/flv|ld/trans|flv|trans)/")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
+    channel_re = re.compile(r'^([\D+]+[^.]*)\..*')
     logs = open(log_dir+"/"+file,'r').readlines()
 
 #init top_list
@@ -307,10 +308,14 @@ def calculate(file):
             status = bool(re.compile(r"^(2|3)\d{2}$").match(x_group[2]))
             flu = int(x_group[3])
             duration = int(x_group[4])
-            channel = x_group[7].split(".")[0]
-
+            # channel = x_group[7].split(".")[0]
+            channel_ma = channel_re.match(x_group[7])
             req_ma = req_re.match(x_group[9])
             live_ma = live_re.match(x_group[9])
+            if channel_ma:
+                channel = channel_ma.group(1)
+            else:
+                channel = "unknow"
             if req_ma:
                 rate = str(int(req_ma.group(2))%5)
                 seg = req_ma.group(3)==u"1"
