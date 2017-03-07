@@ -3,3 +3,4 @@
 fabfile.pyc
 info.*
 *.log
+test_*
