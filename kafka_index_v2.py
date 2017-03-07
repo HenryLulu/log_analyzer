@@ -1,6 +1,6 @@
 log_type = 1
-code_version = "ICSAgent V2.1"
-code_build = "2017030201"
+code_version = "ICSAgent V2.2"
+code_build = "2017030601"
 log_duration = 60  #s
 code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
@@ -43,13 +43,6 @@ except:
     md5_str = "unknow"
 
 try:
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server_ip =  socket.inet_ntoa(fcntl.ioctl(
-        s.fileno(),
-        0x8915, # SIOCGIFADDR
-        struct.pack('256s', 'eth5'[:15])
-    )[20:24])
-except:
     in_ip_re = re.compile(r"(10\..+)|(172\.((1[6-9])|(2[0-9])|(3[0-1]))\..+)|(192\.168\..+)")
     server_ip = "unknow"
     ips = os.popen("LANG=C ifconfig | grep \"inet addr\" | grep -v \"127.0.0.1\" |grep -v \"0.0.0.0\"| awk -F \":\" '{print $2}' | awk '{print $1}'").readlines()
@@ -58,6 +51,8 @@ except:
         if not in_ip_re.match(ip):
             server_ip = ip
             break
+except:
+    server_ip = "unknow"
 
 cdn_name = "unknow"
 if log_type==1:
