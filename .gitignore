@@ -3,3 +3,5 @@
 fabfile.pyc
 info.*
 *.log
+test_*
+.vscode
