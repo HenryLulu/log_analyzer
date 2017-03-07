@@ -3,5 +3,9 @@
 fabfile.pyc
 info.*
 *.log
+<<<<<<< HEAD
 test_*
 .vscode
+=======
+test_*
+>>>>>>> c480d12fc369b83ec28e62c1bd7068ad13e33acf
