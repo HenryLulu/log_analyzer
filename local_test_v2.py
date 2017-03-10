@@ -89,6 +89,14 @@ def init_log():
 def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
+def stringtify_user_obj(u):
+    channel_s = ""
+    rate_s = ""
+    for c in u['channel_n']:
+        channel_s = channel_s + c + ':' + str(u['channel_n'][c]) + ','
+    for r in ['0','1','2','3','4']:
+        rate_s = rate_s + r + ':' + str(u['rate_n'][r]) + ','    
+    return str(u['u_ip'])+'_'+str(u['start'])+'_'+str(u['end'])+'_'+str(u['jam'])+'_'+str(u['req_n'])+'_'+str(u['suc_n'])+'_'+rate_s+'_'+channel_s
 def conn_kafka(user_list,log_info,log_state,user_state):
     random.shuffle(kafka_addr)
     producer = None
@@ -352,8 +360,8 @@ def calculate(file):
                     user_list[l[0]]["duration"] += l[10]
                 else:
                     user_list[l[0]] = {
-                        "log_time":starttm,
-                        "from":log_type,
+                        # "log_time":starttm,
+                        # "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
                         "suc_n":1 if l[2] else 0,
@@ -409,7 +417,7 @@ def calculate(file):
                 user_list[u]["jam"] = jam
                 if jam:
                     current_category['jam_n'] += 1
-                user_list[u]["s_ip"] = server_ip
+                # user_list[u]["s_ip"] = server_ip
                 del user_list[u]["seg_t"]
                 del user_list[u]["seg_s"]
                 del user_list[u]["seg_e"]
@@ -424,8 +432,8 @@ def calculate(file):
                     user_list[l[0]]["duration"] += l[10]
                 else:
                     user_list[l[0]] = {
-                        "log_time":starttm,
-                        "from":log_type,
+                        # "log_time":starttm,
+                        # "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
                         "suc_n":1 if l[2] else 0,
@@ -433,7 +441,7 @@ def calculate(file):
                         "end":l[1],
                         "agent":l[8],
                         "jam": l[6],
-                        "s_ip": server_ip,
+                        # "s_ip": server_ip,
                         "flu":l[9],
                         "duration":l[10],
                         "rate_n":{
@@ -495,7 +503,7 @@ def calculate(file):
             current_category['bitrate'] = 0
 
         #to total
-        total['user_list'].extend(user_list.values())
+        total['user_list'].extend(list(map(stringtify_user_obj,user_list.values())))
         total['req_n'] += current_category['req_n']
         total['suc_n'] += current_category['suc_n']
         total['jam_n'] += current_category['jam_n']
@@ -537,24 +545,29 @@ def calculate(file):
     log_info['channel_n'] = total['channel_n']
 
 #send to kafka
-    user_list_json = json.JSONEncoder().encode(user_list)
+    user_list_json = json.JSONEncoder().encode({
+        'log_time':starttm,
+        'from':log_type,
+        's_ip':server_ip,
+        'users':user_list
+    })
     log_info_json = json.JSONEncoder().encode(log_info)
 
     retry_time = 10
-    log_state = False
-    user_state = False
-    while retry_time>0:
-        retry_time -= 1
-        res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
-        log_state = res[0]
-        user_state = res[1]
-        if log_state and user_state:
-            logging.info("complete analyzing:"+file)
-            break
-        time.sleep(5)
-    if retry_time == 0:
-        logging.error("Kafka error and retry failed")
-        raise TimeOutException()
+    # log_state = False
+    # user_state = False
+    # while retry_time>0:
+    #     retry_time -= 1
+    #     res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
+    #     log_state = res[0]
+    #     user_state = res[1]
+    #     if log_state and user_state:
+    #         logging.info("complete analyzing:"+file)
+    #         break
+    #     time.sleep(5)
+    # if retry_time == 0:
+    #     logging.error("Kafka error and retry failed")
+    #     raise TimeOutException()
 
     #func end
 
