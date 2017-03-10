@@ -96,7 +96,7 @@ def stringtify_user_obj(u):
         channel_s = channel_s + c + ':' + str(u['channel_n'][c]) + ','
     for r in ['0','1','2','3','4']:
         rate_s = rate_s + r + ':' + str(u['rate_n'][r]) + ','    
-    return str(u['u_ip'])+'_'+str(u['start'])+'_'+str(u['end'])+'_'+str(u['jam'])+'_'+str(u['req_n'])+'_'+str(u['suc_n'])+'_'+rate_s+'_'+channel_s
+    return str(u['u_ip'])+'_'+str(u['flu'])+'_'+str(u['start'])+'_'+str(u['end'])+'_'+str(u['jam'])+'_'+str(u['req_n'])+'_'+str(u['suc_n'])+'_'+rate_s+'_'+channel_s
 def conn_kafka(user_list,log_info,log_state,user_state):
     random.shuffle(kafka_addr)
     producer = None
