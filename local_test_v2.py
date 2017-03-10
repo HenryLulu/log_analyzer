@@ -68,22 +68,22 @@ class TimeOutException(Exception):
     pass
 
 def init_log():
-    try:
-        os.rename("/usr/local/pzs/pzt/info_2.log","/usr/local/pzs/pzt/info_3.log")
-    except:
-        pass
-    try:
-        os.rename("/usr/local/pzs/pzt/info_1.log","/usr/local/pzs/pzt/info_2.log")
-    except:
-        pass
-    try:
-        os.rename("/usr/local/pzs/pzt/info.log","/usr/local/pzs/pzt/info_1.log")
-    except:
-        pass
+    # try:
+    #     os.rename("/usr/local/pzs/pzt/info_2.log","/usr/local/pzs/pzt/info_3.log")
+    # except:
+    #     pass
+    # try:
+    #     os.rename("/usr/local/pzs/pzt/info_1.log","/usr/local/pzs/pzt/info_2.log")
+    # except:
+    #     pass
+    # try:
+    #     os.rename("/usr/local/pzs/pzt/info.log","/usr/local/pzs/pzt/info_1.log")
+    # except:
+    #     pass
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        filename='/usr/local/pzs/pzt/info.log',
+        filename='./info.log',
         filemode='w')
 
 def ifjam(u):
@@ -99,7 +99,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
             logging.info("connected to broker: "+broker)
             break
         except Exception,e:
-            logging.error(str(Exception)+":"+str(e))
+            logging.debug(str(Exception)+":"+str(e))
     if producer is not None:
         if log_state==False:
             try:
@@ -119,7 +119,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
                 user_state=False
         producer.close()
     else:
-        logging.error("no broker available")
+        logging.debug("no broker available")
 
     return (log_state,user_state)
 
@@ -540,22 +540,21 @@ def calculate(file):
     user_list_json = json.JSONEncoder().encode(user_list)
     log_info_json = json.JSONEncoder().encode(log_info)
 
-    print log_info_json
-    # retry_time = 10
-    # log_state = False
-    # user_state = False
-    # while retry_time>0:
-    #     retry_time -= 1
-    #     res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
-    #     log_state = res[0]
-    #     user_state = res[1]
-    #     if log_state and user_state:
-    #         logging.info("complete analyzing:"+file)
-    #         break
-    #     time.sleep(5)
-    # if retry_time == 0:
-    #     logging.error("Kafka error and retry failed")
-    #     raise TimeOutException()
+    retry_time = 10
+    log_state = False
+    user_state = False
+    while retry_time>0:
+        retry_time -= 1
+        res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
+        log_state = res[0]
+        user_state = res[1]
+        if log_state and user_state:
+            logging.info("complete analyzing:"+file)
+            break
+        time.sleep(5)
+    if retry_time == 0:
+        logging.error("Kafka error and retry failed")
+        raise TimeOutException()
 
     #func end
 
@@ -577,8 +576,8 @@ def upload(file):
             ftp.quit()
             break
         except Exception,e:
-            logging.error(str(Exception)+":"+str(e)+str(e.args))
-            logging.error("fail to upload:" + file + ", now retry...")
+            logging.debug(str(Exception)+":"+str(e)+str(e.args))
+            logging.debug("fail to upload:" + file + ", now retry...")
     if re_up_time < 3:
         logging.info("complete uploading:"+file)
     else:
@@ -646,4 +645,5 @@ def main():
         logging.error("Init fail")
 
 # main()
+init_log()
 calculate("access_20170302153000.log")

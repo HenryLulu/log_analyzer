@@ -1,6 +1,6 @@
 log_type = 1
-code_version = "ICSAgent V2.2"
-code_build = "2017030601"
+code_version = "ICSAgent V2.3"
+code_build = "2017031001"
 log_duration = 60  #s
 code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
@@ -99,7 +99,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
             logging.info("connected to broker: "+broker)
             break
         except Exception,e:
-            logging.error(str(Exception)+":"+str(e))
+            logging.debug(str(Exception)+":"+str(e))
     if producer is not None:
         if log_state==False:
             try:
@@ -119,7 +119,7 @@ def conn_kafka(user_list,log_info,log_state,user_state):
                 user_state=False
         producer.close()
     else:
-        logging.error("no broker available")
+        logging.debug("no broker available")
 
     return (log_state,user_state)
 
@@ -576,8 +576,8 @@ def upload(file):
             ftp.quit()
             break
         except Exception,e:
-            logging.error(str(Exception)+":"+str(e)+str(e.args))
-            logging.error("fail to upload:" + file + ", now retry...")
+            logging.debug(str(Exception)+":"+str(e)+str(e.args))
+            logging.debug("fail to upload:" + file + ", now retry...")
     if re_up_time < 3:
         logging.info("complete uploading:"+file)
     else:
