@@ -643,8 +643,8 @@ def monitor():
 
             elif re.compile(r"^access_.+log.7z$").match(file):
                 try:
+                    time.sleep(10)
                     p = Process(target=upload, args=(file,))
-                    time.sleep(random.randint(0,10))
                     p.start()
                     p.join()
                 except:
