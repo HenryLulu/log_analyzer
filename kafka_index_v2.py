@@ -6,6 +6,7 @@ log_duration = 60  #s
 code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
 
+fail_times = 0
 ftp_conf = {
     "addr": "monitor1.powzamedia.com",
     "port": "20021",
@@ -567,7 +568,10 @@ def calculate(file):
             break
         time.sleep(5)
     if retry_time == 0:
+        if fail_times > 10:
+            os._exit(0)
         logging.error("Kafka error and retry failed")
+        fail_times += 1
         raise TimeOutException()
 
     #func end

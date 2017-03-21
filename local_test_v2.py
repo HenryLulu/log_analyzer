@@ -399,7 +399,7 @@ def calculate(file):
 
                 seg_mode_time = 4 if l[5] else 10
                 if rate_list.has_key(l[4]):
-                    rate_list[l[4]] += seg_mode_time
+                    rate_list[l[4]] += seg_mode_time#int(l[10])/1000#
                 else:
                     rate_list[l[4]] = seg_mode_time
                 if user_list[l[0]]['rate_n'].has_key(l[4]):
@@ -552,6 +552,8 @@ def calculate(file):
         'users':user_list
     })
     log_info_json = json.JSONEncoder().encode(log_info)
+    print total['flu']
+    print total['rate_n']
 
     retry_time = 10
     # log_state = False
