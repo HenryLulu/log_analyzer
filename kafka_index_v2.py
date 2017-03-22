@@ -1,12 +1,14 @@
 log_type = 1
 #modify data structure in user_table
-code_version = "ICSAgent V2.4"
-code_build = "2017031002"
+code_version = "ICSAgent V3.2"
+code_build = "2017032201"
 log_duration = 60  #s
 code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
 
 fail_times = 0
+import time
+last_fail_time = time.time()
 ftp_conf = {
     "addr": "monitor1.powzamedia.com",
     "port": "20021",
@@ -23,7 +25,6 @@ from ftplib import FTP
 ftp = FTP()
 import re
 import os
-import time
 import socket
 import fcntl
 import struct
@@ -558,6 +559,8 @@ def calculate(file):
     retry_time = 10
     log_state = False
     user_state = False
+    global fail_times
+    global last_fail_time
     while retry_time>0:
         retry_time -= 1
         res = conn_kafka(user_list_json,log_info_json,log_state,user_state)
@@ -568,11 +571,17 @@ def calculate(file):
             break
         time.sleep(5)
     if retry_time == 0:
+        if time.time()-last_fail_time>600:
+            fail_times = 0
+        else:
+            last_fail_time = time.time()
         if fail_times > 10:
+            logging.error("kill myself")
             os._exit(0)
-        logging.error("Kafka error and retry failed")
-        fail_times += 1
-        raise TimeOutException()
+        else:
+            logging.error("Kafka error and retry failed")
+            fail_times += 1
+            raise TimeOutException()
 
     #func end
 
