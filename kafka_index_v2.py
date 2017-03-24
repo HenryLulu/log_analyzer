@@ -1,7 +1,7 @@
 log_type = 1
 #modify data structure in user_table
-code_version = "ICSAgent V3.2"
-code_build = "2017032201"
+code_version = "ICSAgent V3.3"
+code_build = "2017032401"
 log_duration = 60  #s
 code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
@@ -20,7 +20,8 @@ kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n
 log_dir = "/usr/local/pzs/pzlogbak"
 
 from kafka import KafkaProducer
-from multiprocessing import Process
+# from multiprocessing import Process
+import threading
 from ftplib import FTP
 ftp = FTP()
 import re
@@ -656,10 +657,11 @@ def monitor():
 
             elif re.compile(r"^access_.+log.7z$").match(file):
                 try:
-                    time.sleep(10)
-                    p = Process(target=upload, args=(file,))
-                    p.start()
-                    p.join()
+                    # time.sleep(10)
+                    # p = Process(target=upload, args=(file,))
+                    # p.start()
+                    # p.join()
+                    threading.Thread(target=upload, args=(file,)).start() 
                 except:
                     logging.error("fail to start upload progress:"+file)
 
