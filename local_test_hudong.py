@@ -358,13 +358,12 @@ def calculate(file):
     log_info['band'] = total['band']
     log_info['rate_n'] = total['rate_n']
     try:
-        log_info['bitrate'] = 0
         total_rate = 0
         total_time = 0
         for rate in total['rate_n']:
-            total_rate += rate
-            total_time += total['rate_n'][rate]
-        
+            total_rate += int(rate)*int(total['rate_n'][rate])
+            total_time += float(total['rate_n'][rate])
+        log_info['bitrate'] = round(total_rate/total_time,2)
     except:
         log_info['bitrate'] = 0
     log_info['channel_n'] = total['channel_n']
