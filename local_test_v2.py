@@ -90,13 +90,26 @@ def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
 def stringtify_user_obj(u):
+    print u['type']
+    if (u['type']=='hls_0' and (u['agent'].find('Apple')!=-1)):
+        agent = 'ios-hls'
+    elif (u['type']=='hls_0' and (u['agent'].find('Android')!=-1)):
+        agent = 'android-hls'
+    elif u['type']=='hds_1':
+        agent = 'pc-hds'
+    elif u['type']=='flv':
+        agent = 'pc-flv'
+    elif (u['type']=='ld/flv' or u['type']=='ld/trans'):
+        agent = 'android-p2sp'
+    else:
+        agent = 'unknow'
     channel_s = ""
     rate_s = ""
     for c in u['channel_n']:
         channel_s = channel_s + c + ':' + str(u['channel_n'][c]) + ','
     for r in ['0','1','2','3','4']:
         rate_s = rate_s + r + ':' + str(u['rate_n'][r]) + ','    
-    return str(u['u_ip'])+'_'+str(u['flu'])+'_'+str(u['start'])+'_'+str(u['end'])+'_'+str(u['jam'])+'_'+str(u['req_n'])+'_'+str(u['suc_n'])+'_'+rate_s+'_'+channel_s
+    return str(u['u_ip'])+'_'+str(u['flu'])+'_'+str(u['start'])+'_'+str(u['end'])+'_'+str(u['jam'])+'_'+str(u['req_n'])+'_'+str(u['suc_n'])+'_'+rate_s+'_'+channel_s+'_'+agent
 def conn_kafka(user_list,log_info,log_state,user_state):
     random.shuffle(kafka_addr)
     producer = None
@@ -661,4 +674,4 @@ def main():
 
 # main()
 init_log()
-calculate("access_20170302153000.log")
+calculate("access_20170314191500.log")
