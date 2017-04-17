@@ -1,7 +1,6 @@
 log_type = 1
-#modify data structure in user_table
 code_version = "ICSAgent V3.3"
-code_build = "2017032401"
+code_build = "2017041701"
 log_duration = 60  #s
 code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
@@ -98,7 +97,7 @@ def stringtify_user_obj(u):
     rate_s = ""
     for c in u['channel_n']:
         channel_s = channel_s + c + ':' + str(u['channel_n'][c]) + ','
-    for r in ['0','1','2','3','4']:
+    for r in u['rate_n']:
         rate_s = rate_s + r + ':' + str(u['rate_n'][r]) + ','    
     return str(u['u_ip'])+'_'+str(u['flu'])+'_'+str(u['start'])+'_'+str(u['end'])+'_'+str(u['jam'])+'_'+str(u['req_n'])+'_'+str(u['suc_n'])+'_'+rate_s+'_'+channel_s
 def conn_kafka(user_list,log_info,log_state,user_state):
@@ -149,50 +148,6 @@ def calculate(file):
 
 #init top_list
     top_list = {
-        'hls_0' : {
-            'type' : 1,
-            'list' : [],
-            'users' : {},
-            "req_n":0,
-            "suc_n":0,
-            "suc_r":0,
-            "user_n":0,
-            "jam_n":0,
-            "freeze_r":0,
-            "flu":0,
-            "band":0,
-            "rate_n":{
-                "0":0,
-                "1":0,
-                "2":0,
-                "3":0,
-                "4":0
-            },
-            "bitrate":0,
-            "channel_n":{}
-        },
-        'hds_1' : {
-            'type' : 1,
-            'list' : [],
-            'users' : {},
-            "req_n":0,
-            "suc_n":0,
-            "suc_r":0,
-            "user_n":0,
-            "jam_n":0,
-            "freeze_r":0,
-            "flu":0,
-            "band":0,
-            "rate_n":{
-                "0":0,
-                "1":0,
-                "2":0,
-                "3":0,
-                "4":0
-            },
-            "bitrate":0,
-            "channel_n":{}
-        },
         'ld/flv' : {
             'type' : 2,
             'list' : [],
@@ -205,13 +160,7 @@ def calculate(file):
             "freeze_r":0,
             "flu":0,
             "band":0,
-            "rate_n":{
-                "0":0,
-                "1":0,
-                "2":0,
-                "3":0,
-                "4":0
-            },
+            "rate_n":{},
             "bitrate":0,
             "channel_n":{}
         },
@@ -227,13 +176,7 @@ def calculate(file):
             "freeze_r":0,
             "flu":0,
             "band":0,
-            "rate_n":{
-                "0":0,
-                "1":0,
-                "2":0,
-                "3":0,
-                "4":0
-            },
+            "rate_n":{},
             "bitrate":0,
             "channel_n":{}
         },
@@ -249,13 +192,7 @@ def calculate(file):
             "freeze_r":0,
             "flu":0,
             "band":0,
-            "rate_n":{
-                "0":0,
-                "1":0,
-                "2":0,
-                "3":0,
-                "4":0
-            },
+            "rate_n":{},
             "bitrate":0,
             "channel_n":{}
         },
@@ -271,13 +208,7 @@ def calculate(file):
             "freeze_r":0,
             "flu":0,
             "band":0,
-            "rate_n":{
-                "0":0,
-                "1":0,
-                "2":0,
-                "3":0,
-                "4":0
-            },
+            "rate_n":{},
             "bitrate":0,
             "channel_n":{}
         },
@@ -289,13 +220,7 @@ def calculate(file):
         'jam_n':0,
         'flu':0,
         'band':0,
-        'rate_n':{
-            "0":0,
-            "1":0,
-            '2':0,
-            '3':0,
-            '4':0
-        },
+        'rate_n':{},
         'channel_n':{}
     }
 
@@ -315,24 +240,13 @@ def calculate(file):
             status = bool(re.compile(r"^(2|3)\d{2}$").match(x_group[2]))
             flu = int(x_group[3])
             duration = int(x_group[4])
-            # channel = x_group[7].split(".")[0]
             channel_ma = channel_re.match(x_group[7])
-            req_ma = req_re.match(x_group[9])
             live_ma = live_re.match(x_group[9])
             if channel_ma:
                 channel = channel_ma.group(1)
             else:
                 channel = "unknow"
-            if req_ma:
-                rate = str(int(req_ma.group(2))%5)
-                seg = req_ma.group(3)==u"1"
-                segnum = int(req_ma.group(4))
-                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu,duration)
-                if seg:
-                    top_list['hds_1']['list'].append(r)
-                else:
-                    top_list['hls_0']['list'].append(r)
-            elif live_ma:
+            if live_ma:
                 type = live_ma.group(2)
                 rate = x_group[6]
                 try:
@@ -352,81 +266,8 @@ def calculate(file):
         user_list = current_category['users']
         rate_list = current_category['rate_n']
         channel_list = current_category['channel_n']
-        if current_category['type']==1:
-            for l in log_list:
-                if user_list.has_key(l[0]):
-                    user_list[l[0]]["end"] = l[1]
-                    user_list[l[0]]["seg_e"] = l[6]
-                    user_list[l[0]]["req_n"] += 1
-                    if l[2]:
-                        user_list[l[0]]["suc_n"] += 1
-                    user_list[l[0]]["flu"] += l[9]
-                    user_list[l[0]]["duration"] += l[10]
-                else:
-                    user_list[l[0]] = {
-                        # "log_time":starttm,
-                        # "from":log_type,
-                        "u_ip":l[7],
-                        "req_n":1,
-                        "suc_n":1 if l[2] else 0,
-                        "start":l[1],
-                        "end":l[1],
-                        "seg_t":l[5],
-                        "seg_s":l[6],
-                        "seg_e":l[6],
-                        "agent":l[8],
-                        "flu":l[9],
-                        "duration":l[10],
-                        "rate_n":{
-                            "0":0,
-                            "1":0,
-                            "2":0,
-                            "3":0,
-                            "4":0
-                        },
-                        "channel_n":{},
-                        "type":category_name
-                    }
 
-                if channel_list.has_key(l[3]):
-                    channel_list[l[3]] += l[9]
-                else:
-                    channel_list[l[3]] = l[9]
-                if total['channel_n'].has_key(l[3]):
-                    total['channel_n'][l[3]] += l[9]
-                else:
-                    total['channel_n'][l[3]] = l[9]
-                if user_list[l[0]]['channel_n'].has_key(l[3]):
-                    user_list[l[0]]['channel_n'][l[3]] += l[9]
-                else:
-                    user_list[l[0]]['channel_n'][l[3]] = l[9]
-
-                seg_mode_time = 4 if l[5] else 10
-                if rate_list.has_key(l[4]):
-                    rate_list[l[4]] += seg_mode_time
-                else:
-                    rate_list[l[4]] = seg_mode_time
-                if user_list[l[0]]['rate_n'].has_key(l[4]):
-                    user_list[l[0]]['rate_n'][l[4]] += seg_mode_time
-                else:
-                    user_list[l[0]]['rate_n'][l[4]] = seg_mode_time
-
-                if l[2]:
-                    current_category['suc_n'] += 1
-                #flu total
-                current_category['flu'] += l[9]
-
-            for u in user_list:
-                jam = ifjam(user_list[u])
-                user_list[u]["jam"] = jam
-                if jam:
-                    current_category['jam_n'] += 1
-                # user_list[u]["s_ip"] = server_ip
-                del user_list[u]["seg_t"]
-                del user_list[u]["seg_s"]
-                del user_list[u]["seg_e"]
-
-        elif current_category['type']==2:
+        if current_category['type']==2:
             for l in log_list:
                 if user_list.has_key(l[0]):
                     user_list[l[0]]["req_n"] += 1
@@ -436,8 +277,6 @@ def calculate(file):
                     user_list[l[0]]["duration"] += l[10]
                 else:
                     user_list[l[0]] = {
-                        # "log_time":starttm,
-                        # "from":log_type,
                         "u_ip":l[7],
                         "req_n":1,
                         "suc_n":1 if l[2] else 0,
@@ -445,16 +284,9 @@ def calculate(file):
                         "end":l[1],
                         "agent":l[8],
                         "jam": l[6],
-                        # "s_ip": server_ip,
                         "flu":l[9],
                         "duration":l[10],
-                        "rate_n":{
-                            "0":0,
-                            "1":0,
-                            "2":0,
-                            "3":0,
-                            "4":0
-                        },
+                        "rate_n":{},
                         "channel_n":{},
                         "type":category_name
                     }
@@ -473,10 +305,7 @@ def calculate(file):
 
                 lrms = long_rate_re.findall(l[4])
                 for lrm in lrms:
-                    if int(lrm[0])==4000:
-                        k = "0"
-                    else:
-                        k = str((2500-int(lrm[0]))/500)
+                    k = lrm[0]
                     if rate_list.has_key(k):
                         rate_list[k] += int(lrm[1])
                     else:
@@ -513,10 +342,11 @@ def calculate(file):
         total['jam_n'] += current_category['jam_n']
         total['flu'] += current_category['flu']
         total['band'] += current_category['band']
-        total['rate_n']['1'] += current_category['rate_n']['1']
-        total['rate_n']['2'] += current_category['rate_n']['2']
-        total['rate_n']['3'] += current_category['rate_n']['3']
-        total['rate_n']['4'] += current_category['rate_n']['4']
+        for rate in current_category['rate_n']:
+            if total['rate_n'].has_key(rate):
+                total['rate_n'][rate] += current_category['rate_n'][rate]
+            else:
+                total['rate_n'][rate] = current_category['rate_n'][rate]
         #clear
         del current_category['type']
         del current_category['list']
@@ -543,7 +373,13 @@ def calculate(file):
     log_info['band'] = total['band']
     log_info['rate_n'] = total['rate_n']
     try:
-        log_info['bitrate'] = (rate_list["0"]*4000+log_info['rate_n']["1"]*2000+log_info['rate_n']["2"]*1500+log_info['rate_n']["3"]*850+log_info['rate_n']["4"]*500)/(log_info['rate_n']["1"]+log_info['rate_n']["2"]+log_info['rate_n']["3"]+log_info['rate_n']["4"])
+        log_info['bitrate'] = 0
+        total_rate = 0
+        total_time = 0
+        for rate in total['rate_n']:
+            total_rate += rate
+            total_time += total['rate_n'][rate]
+        
     except:
         log_info['bitrate'] = 0
     log_info['channel_n'] = total['channel_n']
