@@ -15,7 +15,7 @@ ftp_conf = {
     "pwd": "sjdd123",
     "remote_dir":"/data2/upload/"
 }
-kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
+kafka_addr = ["ld.mongo1.powzamedia.com:9092","ld.mongo2.powzamedia.com:9092"]
 log_dir = "/usr/local/pzs/pzlogbak"
 
 from kafka import KafkaProducer
