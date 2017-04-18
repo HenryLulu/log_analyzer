@@ -142,7 +142,11 @@ def conn_kafka(user_list,log_info,log_state,user_state):
                     user_state=True
             except:
                 user_state=False
-        producer.close()
+        try:
+            producer.flush(timeout=5)
+            producer.close(timeout=5)
+        except:
+            logging.error('fail to close producer')
     else:
         logging.debug("no broker available")
 
