@@ -1,7 +1,7 @@
 log_type = 1
 #modify data structure in user_table
-code_version = "ICSAgent V3.3"
-code_build = "2017032401"
+code_version = "ICSAgent V3.4"
+code_build = "2017041801"
 log_duration = 60  #s
 code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
