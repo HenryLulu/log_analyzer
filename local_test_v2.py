@@ -90,7 +90,6 @@ def ifjam(u):
     seg_mode_time = 4 if u["seg_t"] else 10
     return (u["end"]-u["start"]-(u["seg_e"]-u["seg_s"])*seg_mode_time) > seg_mode_time
 def stringtify_user_obj(u):
-    print u['type']
     if (u['type']=='hls_0' and (u['agent'].find('Apple')!=-1)):
         agent = 'ios-hls'
     elif (u['type']=='hls_0' and (u['agent'].find('Android')!=-1)):
@@ -102,14 +101,14 @@ def stringtify_user_obj(u):
     elif (u['type']=='ld/flv' or u['type']=='ld/trans'):
         agent = 'android-p2sp'
     else:
-        agent = 'unknow'
+        agent = 'agent'
     channel_s = ""
     rate_s = ""
     for c in u['channel_n']:
         channel_s = channel_s + c + ':' + str(u['channel_n'][c]) + ','
     for r in ['0','1','2','3','4']:
         rate_s = rate_s + r + ':' + str(u['rate_n'][r]) + ','    
-    return str(u['u_ip'])+'_'+str(u['flu'])+'_'+str(u['start'])+'_'+str(u['end'])+'_'+str(u['jam'])+'_'+str(u['req_n'])+'_'+str(u['suc_n'])+'_'+rate_s+'_'+channel_s+'_'+agent
+    return str(u['u_ip'])+'_'+str(u['flu'])+'_'+str(u['start'])+'_'+str(u['end'])+'_'+str(u['jam'])+'_'+str(u['req_n'])+'_'+str(u['suc_n'])+'_'+rate_s+'_'+channel_s+'_'+agent+'_'+u['am']
 def conn_kafka(user_list,log_info,log_state,user_state):
     random.shuffle(kafka_addr)
     producer = None
@@ -154,6 +153,7 @@ def calculate(file):
     live_re = re.compile(r"^(.*)/live/(ld/flv|ld/trans|flv|trans)/")
     long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
     channel_re = re.compile(r'^([^\d\.]+[^\.]*)\..*')
+    am_re = re.compile(r'^.+am=(\d+)')
     logs = open(log_dir+"/"+file,'r').readlines()
 
 #init top_list
@@ -326,17 +326,23 @@ def calculate(file):
             duration = int(x_group[4])
             # channel = x_group[7].split(".")[0]
             channel_ma = channel_re.match(x_group[7])
+            am_ma = am_re.match(x_group[9])
             req_ma = req_re.match(x_group[9])
             live_ma = live_re.match(x_group[9])
+
             if channel_ma:
                 channel = channel_ma.group(1)
             else:
                 channel = "unknow"
+            if am_ma:
+                am = am_ma.group(1)
+            else:
+                am = "am"
             if req_ma:
                 rate = str(int(req_ma.group(2))%5)
                 seg = req_ma.group(3)==u"1"
                 segnum = int(req_ma.group(4))
-                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu,duration)
+                r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu,duration,am)
                 if seg:
                     top_list['hds_1']['list'].append(r)
                 else:
@@ -348,7 +354,7 @@ def calculate(file):
                     live_jam = int(x_group[5])>0
                 except:
                     live_jam = False
-                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu,duration)
+                r = (ip+agent,tim,status,channel,rate,"",live_jam,ip,agent,flu,duration,am)
                 if top_list.has_key(type):
                     top_list[type]['list'].append(r)
         except:
@@ -386,6 +392,7 @@ def calculate(file):
                         "agent":l[8],
                         "flu":l[9],
                         "duration":l[10],
+                        "am":l[11],
                         "rate_n":{
                             "0":0,
                             "1":0,
@@ -457,6 +464,7 @@ def calculate(file):
                         # "s_ip": server_ip,
                         "flu":l[9],
                         "duration":l[10],
+                        "am":l[11],
                         "rate_n":{
                             "0":0,
                             "1":0,
@@ -674,4 +682,4 @@ def main():
 
 # main()
 init_log()
-calculate("access_20170314191500.log")
+calculate("access_20170418154300.log")
