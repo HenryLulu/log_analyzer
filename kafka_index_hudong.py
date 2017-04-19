@@ -246,7 +246,7 @@ def calculate(file):
             #     channel = channel_ma.group(1)
             # else:
             #     channel = "unknow"
-            channel = x_group[7]
+            channel = x_group[7].replace('.','_')
             if live_ma:
                 type = live_ma.group(2)
                 rate = x_group[6]
