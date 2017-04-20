@@ -68,18 +68,6 @@ class TimeOutException(Exception):
     pass
 
 def init_log():
-    # try:
-    #     os.rename("/usr/local/pzs/pzt/info_2.log","/usr/local/pzs/pzt/info_3.log")
-    # except:
-    #     pass
-    # try:
-    #     os.rename("/usr/local/pzs/pzt/info_1.log","/usr/local/pzs/pzt/info_2.log")
-    # except:
-    #     pass
-    # try:
-    #     os.rename("/usr/local/pzs/pzt/info.log","/usr/local/pzs/pzt/info_1.log")
-    # except:
-    #     pass
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
@@ -149,9 +137,9 @@ def calculate(file):
 
     logging.info("start analyzing:"+file)
 #define reg
-    req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
+    req_re = re.compile(r"^(.+)(\d)_/seg(\d)[^\?]+(\d{9})")
     live_re = re.compile(r"^(.*)/live/(ld/flv|ld/trans|flv|trans)/")
-    long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
+    long_rate_re = re.compile(r'(\d+)_(\d+)')
     channel_re = re.compile(r'^([^\d\.]+[^\.]*)\..*')
     am_re = re.compile(r'^.+am=(\d+)')
     logs = open(log_dir+"/"+file,'r').readlines()
@@ -340,7 +328,8 @@ def calculate(file):
                 am = "am"
             if req_ma:
                 rate = str(int(req_ma.group(2))%5)
-                seg = req_ma.group(3)==u"1"
+                # seg = req_ma.group(3)==u"1"
+                seg = (x_group[9].find('-Frag')!=-1)
                 segnum = int(req_ma.group(4))
                 r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu,duration,am)
                 if seg:
@@ -575,6 +564,8 @@ def calculate(file):
     log_info_json = json.JSONEncoder().encode(log_info)
     print total['flu']
     print total['rate_n']
+    print top_list['hls_0']['flu']
+    print top_list['hds_1']['flu']
 
     retry_time = 10
     # log_state = False

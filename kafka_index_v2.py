@@ -1,7 +1,7 @@
 log_type = 1
 #modify data structure in user_table
-code_version = "ICSAgent V3.4"
-code_build = "2017041801"
+code_version = "ICSAgent V3.5"
+code_build = "2017042001"
 log_duration = 60  #s
 code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "/usr/local/pzs/pzt/"
@@ -158,9 +158,9 @@ def calculate(file):
 
     logging.info("start analyzing:"+file)
 #define reg
-    req_re = re.compile(r"^(.+)(\d)_/seg(\d).+(\d{9})")
+    req_re = re.compile(r"^(.+)(\d)_/seg(\d)[^\?]+(\d{9})")
     live_re = re.compile(r"^(.*)/live/(ld/flv|ld/trans|flv|trans)/")
-    long_rate_re = re.compile(r'^(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)\|(\d+)_(\d+)$')
+    long_rate_re = re.compile(r'(\d+)_(\d+)')
     channel_re = re.compile(r'^([^\d\.]+[^\.]*)\..*')
     am_re = re.compile(r'^.+am=(\d+)')
     logs = open(log_dir+"/"+file,'r').readlines()
@@ -349,7 +349,8 @@ def calculate(file):
                 am = "am"
             if req_ma:
                 rate = str(int(req_ma.group(2))%5)
-                seg = req_ma.group(3)==u"1"
+                # seg = req_ma.group(3)==u"1"
+                seg = (x_group[9].find('-Frag')!=-1)
                 segnum = int(req_ma.group(4))
                 r = (ip+agent,tim,status,channel,rate,seg,segnum,ip,agent,flu,duration,am)
                 if seg:
