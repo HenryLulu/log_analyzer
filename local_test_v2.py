@@ -6,13 +6,13 @@ code_name = "/usr/local/pzs/pzt/local_index.py"
 pzt_dir = "./"
 
 ftp_conf = {
-    "addr": "monitor1.powzamedia.com",
-    "port": "20021",
-    "user": "upload",
-    "pwd": "sjdd123",
+    "addr": "xxx",
+    "port": "xxx",
+    "user": "xxx",
+    "pwd": "xxx",
     "remote_dir":"/data2/upload/"
 }
-kafka_addr = ["n0.g1.pzt.powzamedia.com:9092","n1.g1.pzt.powzamedia.com:9092","n2.g1.pzt.powzamedia.com:9092"]
+kafka_addr = ["xxx","xxx","xxx"]
 log_dir = "/Users/henry/bsfiles/new/"
 
 from kafka import KafkaProducer

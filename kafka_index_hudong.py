@@ -9,13 +9,13 @@ fail_times = 0
 import time
 last_fail_time = time.time()
 ftp_conf = {
-    "addr": "monitor1.powzamedia.com",
-    "port": "20021",
-    "user": "upload",
-    "pwd": "sjdd123",
+    "addr": "xxx",
+    "port": "xxx",
+    "user": "xxx",
+    "pwd": "xxx",
     "remote_dir":"/data2/upload/"
 }
-kafka_addr = ["ld.mongo1.powzamedia.com:9092","ld.mongo2.powzamedia.com:9092"]
+kafka_addr = ["xxx","xxx"]
 log_dir = "/usr/local/pzs/pzlogbak"
 
 from kafka import KafkaProducer
